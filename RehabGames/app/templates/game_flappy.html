@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 {% load static %}
 <html lang="en">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Flappy Bird Rehab</title>
 
-    <!-- MediaPipe Pose -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
 
@@ -19,14 +19,13 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f8ff; /* Light sky blue background */
+            background-color: #f0f8ff; 
             color: #333;
         }
         h1 {
-            color: #4682b4; /* Steel blue */
+            color: #4682b4; 
         }
 
-        /* New wrapper so game + debug appear side-by-side */
         .main-row {
             display: flex;
             gap: 20px;
@@ -35,15 +34,15 @@
 
         .game-container {
             position: relative;
-            width: 400px; /* Fixed width */
-            height: 600px; /* Fixed height */
+            width: 400px; 
+            height: 600px; 
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 10px 20px rgba(0,0,0,0.1), 0 6px 6px rgba(0,0,0,0.15);
         }
         canvas {
             display: block;
-            background-color: #70c5ce; /* Brighter sky blue for canvas */
+            background-color: #70c5ce; 
             border-radius: 8px;
         }
         #ui-layer {
@@ -56,7 +55,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            pointer-events: none; /* Let clicks pass through */
+            pointer-events: none; 
             color: white;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             font-size: 24px;
@@ -72,11 +71,11 @@
             z-index: 10;
         }
         .message-box {
-            display: none; /* Hidden by default */
+            display: none;
             padding: 20px;
             background: rgba(0, 0, 0, 0.7);
             border-radius: 10px;
-            pointer-events: all; /* Clickable */
+            pointer-events: all; 
         }
         .message-box h2 {
             margin-top: 0;
@@ -95,7 +94,7 @@
             cursor: pointer;
         }
         .difficulty-option.selected {
-            background-color: #FFD700; /* Yellow */
+            background-color: #FFD700; 
             color: #333;
             text-shadow: none;
         }
@@ -104,7 +103,6 @@
             margin-top: 20px;
         }
 
-        /* Debug panel */
         #debugPanel {
             width: 400px;
             height: 600px;
@@ -129,7 +127,6 @@
             white-space: pre;
         }
 
-        /* Countdown overlay */
         #countdownOverlay {
             position: absolute;
             top: 50%;
@@ -143,683 +140,646 @@
             z-index: 9999;
             pointer-events: none;
         }
+        .retro-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 12px 20px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: #fff;
+            background-color: #ff5722;
+            border: 3px solid #000;
+            border-radius: 4px;
+            text-decoration: none;
+            text-transform: uppercase;
+            box-shadow: 4px 4px 0 #000;
+            transition: all 0.1s ease-in-out;
+            z-index: 1000;
+        }
+
+        .retro-button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 #000;
+            background-color: #ff7043;
+        }
+
+        .retro-button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #000;
+            background-color: #e64a19;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 
     </style>
 </head>
 <body>
+    <a href="{% url 'game_select' %}" class="retro-button">Return to Game Select</a>
 
-<h1>Shoulder-Bird Rehab</h1>
+    <h1>Shoulder-Bird Rehab</h1>
 
-<!-- main row contains game and debug -->
-<div class="main-row">
-    <div class="game-container">
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
-        <div id="ui-layer">
-            <div id="score">0</div>
+    <div class="main-row">
+        <div class="game-container">
+            <canvas id="gameCanvas" width="400" height="600"></canvas>
+            <div id="ui-layer">
+                <div id="score">0</div>
 
-            <!-- Menu Screen -->
-            <div id="menu-container" class="message-box">
-                <h2 id="menu-title">Shoulder-Bird</h2>
-                <p id="menu-status">Loading assets...</p>
-                <div id="difficulty-list"><!-- options --></div>
-                <p classid="instructions" id="menu-instructions" style="display: none;">Use UP/DOWN to select<br/>Press ENTER to start</p>
+                <div id="menu-container" class="message-box">
+                    <h2 id="menu-title">Shoulder-Bird</h2>
+                    <p id="menu-status">Loading assets...</p>
+                    <div id="difficulty-list"></div>
+                    <p classid="instructions" id="menu-instructions" style="display: none;">Use UP/DOWN to select<br/>Press ENTER to start</p>
+                </div>
+
+                <div id="game-over-container" class="message-box">
+                    <h2 id="game-over-title">Game Over</h2>
+                    <p id="game-over-score">Score: 0</p>
+                    <p class="instructions">Press ENTER to return to menu</p>
+                </div>
             </div>
 
-            <!-- Game Over Screen -->
-            <div id="game-over-container" class="message-box">
-                <h2 id="game-over-title">Game Over</h2>
-                <p id="game-over-score">Score: 0</p>
-                <p class="instructions">Press ENTER to return to menu</p>
-            </div>
+            <div id="countdownOverlay">3</div>
         </div>
 
-        <!-- Countdown overlay (shows during start countdown) -->
-        <div id="countdownOverlay">3</div>
+        <div id="debugPanel">
+            <canvas id="debugVideoCanvas" width="400" height="600"></canvas>
+            <div id="debugInfo">Initializing camera...</div>
+        </div>
     </div>
 
-    <!-- Debug panel (camera + tracker) -->
-    <div id="debugPanel">
-        <canvas id="debugVideoCanvas" width="400" height="600"></canvas>
-        <div id="debugInfo">Initializing camera...</div>
-    </div>
-</div>
+    <p>Use <b>Arrow Keys</b> to move horizontally. Vertical (UP/DOWN) uses vision (raise both arms).</p>
 
-<p>Use <b>Arrow Keys</b> to move horizontally. Vertical (UP/DOWN) uses vision (raise both arms).</p>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-<script>
-    // --- Setup (Canvas & Context) ---
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const menuContainerEl = document.getElementById('menu-container');
+        const menuStatusEl = document.getElementById('menu-status');
+        const difficultyListEl = document.getElementById('difficulty-list');
+        const menuInstructionsEl = document.getElementById('menu-instructions');
+        const gameOverContainerEl = document.getElementById('game-over-container');
+        const gameOverScoreEl = document.getElementById('game-over-score');
+        const countdownOverlay = document.getElementById('countdownOverlay');
 
-    // --- UI Elements ---
-    const scoreEl = document.getElementById('score');
-    const menuContainerEl = document.getElementById('menu-container');
-    const menuStatusEl = document.getElementById('menu-status');
-    const difficultyListEl = document.getElementById('difficulty-list');
-    const menuInstructionsEl = document.getElementById('menu-instructions');
-    const gameOverContainerEl = document.getElementById('game-over-container');
-    const gameOverScoreEl = document.getElementById('game-over-score');
-    const countdownOverlay = document.getElementById('countdownOverlay');
+        const BIRD_WIDTH = 95;
+        const BIRD_HEIGHT = 95;
+        const FAST_FALL_STRENGTH = 1.5; 
+        const PIPE_WIDTH = 80;
 
-    // --- Game Constants (from Python file) ---
-    const BIRD_WIDTH = 95;
-    const BIRD_HEIGHT = 95;
-    const FAST_FALL_STRENGTH = 1.5; // This can stay constant
-    const PIPE_WIDTH = 80;
+        const HITBOX_X_SHRINK = 40;
+        const HITBOX_Y_SHRINK = 54;
 
-    // --- Hitbox Adjustment (from Python file) ---
-    const HITBOX_X_SHRINK = 40;
-    const HITBOX_Y_SHRINK = 54;
+        const DIFFICULTY_LEVELS = {
+            'Easy': {
+                'PIPE_GAP': 300,          
+                'PIPE_SPEED': 1.0,        
+                'PIPE_SPACING': 200,      
+                'GRAVITY': 0.045,         
+                'FLAP_STRENGTH': -3.0,    
+                'HORIZONTAL_SPEED': 2.0
+            },
+            'Medium': {
+                'PIPE_GAP': 250,
+                'PIPE_SPEED': 1.4,
+                'PIPE_SPACING': 170,
+                'GRAVITY': 0.06,
+                'FLAP_STRENGTH': -3.8,   
+                'HORIZONTAL_SPEED': 2.5
+            },
+            'Hard': {
+                'PIPE_GAP': 200,
+                'PIPE_SPEED': 1.7,
+                'PIPE_SPACING': 140,
+                'GRAVITY': 0.09,
+                'FLAP_STRENGTH': -4.2,   
+                'HORIZONTAL_SPEED': 3.0
+            }
+        };
 
-    // --- Difficulty Settings ---
-    const DIFFICULTY_LEVELS = {
-        'Easy': {
-            'PIPE_GAP': 300,          // wider gap = easier
-            'PIPE_SPEED': 1.0,        // slower pipes
-            'PIPE_SPACING': 200,      // more distance between pipes
-            'GRAVITY': 0.045,         // slow fall
-            'FLAP_STRENGTH': -3.0,    // soft flap
-            'HORIZONTAL_SPEED': 2.0
-        },
-        'Medium': {
-            'PIPE_GAP': 250,
-            'PIPE_SPEED': 1.4,
-            'PIPE_SPACING': 170,
-            'GRAVITY': 0.06,
-            'FLAP_STRENGTH': -3.8,   // moderate flap
-            'HORIZONTAL_SPEED': 2.5
-        },
-        'Hard': {
-            'PIPE_GAP': 200,
-            'PIPE_SPEED': 1.7,
-            'PIPE_SPACING': 140,
-            'GRAVITY': 0.09,
-            'FLAP_STRENGTH': -4.2,   // strong but not insane
-            'HORIZONTAL_SPEED': 3.0
+        const DIFFICULTY_NAMES = ['Easy', 'Medium', 'Hard'];
+
+        let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
+        let gameGravity, gameFlapStrength, gameHorizontalSpeed;
+
+        let bird, pipes, score, frame, gameState;
+        let selectedDifficultyIndex = 0;
+
+        const assets = {
+            bird: new Image(),
+            pipeBottom: new Image(),
+            pipeTop: null 
+        };
+        let pipeImgHeight = 500; 
+        let assetsLoaded = 0;
+        const totalAssets = 2; 
+
+        const controls = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            enter: false
+        };
+
+        function setupKeyboardControls() {
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowUp') controls.up = true;
+                if (e.key === 'ArrowDown') controls.down = true;
+                if (e.key === 'ArrowLeft') controls.left = true;
+                if (e.key === 'ArrowRight') controls.right = true;
+                if (e.key === 'Enter') controls.enter = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.key === 'ArrowUp') controls.up = false;
+                if (e.key === 'ArrowDown') controls.down = false;
+                if (e.key === 'ArrowLeft') controls.left = false;
+                if (e.key === 'ArrowRight') controls.right = false;
+                if (e.key === 'Enter') controls.enter = false;
+            });
+
+            difficultyListEl.addEventListener('click', (e) => {
+                if (e.target.classList.contains('difficulty-option')) {
+                    selectedDifficultyIndex = parseInt(e.target.dataset.index);
+                    updateMenuSelection();
+                    startGame();
+                }
+            });
         }
-    };
 
-    const DIFFICULTY_NAMES = ['Easy', 'Medium', 'Hard'];
+        function onAssetLoad() {
+            assetsLoaded++;
+            if (assetsLoaded === totalAssets) {
+                preparePipeImages();
 
-    // --- Global Game Variables ---
-    let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
-    let gameGravity, gameFlapStrength, gameHorizontalSpeed;
-
-    let bird, pipes, score, frame, gameState;
-    let selectedDifficultyIndex = 0;
-
-    // --- Asset Loading ---
-    const assets = {
-        bird: new Image(),
-        pipeBottom: new Image(),
-        pipeTop: null // This will be a canvas
-    };
-    let pipeImgHeight = 500; // Default/fallback
-    let assetsLoaded = 0;
-    const totalAssets = 2; // bird + pipe
-
-    // =================================================================
-    // --- SWAPPABLE INPUT SECTION (START) ---
-    // =================================================================
-    const controls = {
-        up: false,
-        down: false,
-        left: false,
-        right: false,
-        enter: false
-    };
-
-    function setupKeyboardControls() {
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowUp') controls.up = true;
-            if (e.key === 'ArrowDown') controls.down = true;
-            if (e.key === 'ArrowLeft') controls.left = true;
-            if (e.key === 'ArrowRight') controls.right = true;
-            if (e.key === 'Enter') controls.enter = true;
-        });
-
-        window.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp') controls.up = false;
-            if (e.key === 'ArrowDown') controls.down = false;
-            if (e.key === 'ArrowLeft') controls.left = false;
-            if (e.key === 'ArrowRight') controls.right = false;
-            if (e.key === 'Enter') controls.enter = false;
-        });
-
-        difficultyListEl.addEventListener('click', (e) => {
-            if (e.target.classList.contains('difficulty-option')) {
-                selectedDifficultyIndex = parseInt(e.target.dataset.index);
+                menuStatusEl.innerText = 'Select Difficulty:';
+                menuInstructionsEl.style.display = 'block';
                 updateMenuSelection();
-                // startGame will run countdown then enable vision & physics
-                startGame();
             }
-        });
-    }
-    // =================================================================
-    // --- SWAPPABLE INPUT SECTION (END) ---
-    // =================================================================
-
-
-    // --- Game Logic ---
-
-    function onAssetLoad() {
-        assetsLoaded++;
-        if (assetsLoaded === totalAssets) {
-            // All images are loaded, now process them
-            preparePipeImages();
-
-            // Update menu to show it's ready
-            menuStatusEl.innerText = 'Select Difficulty:';
-            menuInstructionsEl.style.display = 'block';
-            updateMenuSelection();
         }
-    }
 
-    function preparePipeImages() {
-        const originalWidth = assets.pipeBottom.width;
-        const originalHeight = assets.pipeBottom.height;
-        const scaleFactor = PIPE_WIDTH / originalWidth;
-        pipeImgHeight = Math.floor(originalHeight * scaleFactor);
+        function preparePipeImages() {
+            const originalWidth = assets.pipeBottom.width;
+            const originalHeight = assets.pipeBottom.height;
+            const scaleFactor = PIPE_WIDTH / originalWidth;
+            pipeImgHeight = Math.floor(originalHeight * scaleFactor);
 
-        const bottomCanvas = document.createElement('canvas');
-        bottomCanvas.width = PIPE_WIDTH;
-        bottomCanvas.height = pipeImgHeight;
-        bottomCanvas.getContext('2d').drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
-        assets.pipeBottom = bottomCanvas;
+            const bottomCanvas = document.createElement('canvas');
+            bottomCanvas.width = PIPE_WIDTH;
+            bottomCanvas.height = pipeImgHeight;
+            bottomCanvas.getContext('2d').drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
+            assets.pipeBottom = bottomCanvas;
 
-        const topCanvas = document.createElement('canvas');
-        topCanvas.width = PIPE_WIDTH;
-        topCanvas.height = pipeImgHeight;
-        const topCtx = topCanvas.getContext('2d');
+            const topCanvas = document.createElement('canvas');
+            topCanvas.width = PIPE_WIDTH;
+            topCanvas.height = pipeImgHeight;
+            const topCtx = topCanvas.getContext('2d');
 
-        topCtx.translate(0, pipeImgHeight);
-        topCtx.scale(1, -1);
-        topCtx.drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
+            topCtx.translate(0, pipeImgHeight);
+            topCtx.scale(1, -1);
+            topCtx.drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
 
-        assets.pipeTop = topCanvas;
-    }
-
-    function showMenu() {
-        gameState = 'menu';
-        gameOverContainerEl.style.display = 'none';
-        scoreEl.style.display = 'none';
-        menuContainerEl.style.display = 'block';
-
-        if (assetsLoaded === totalAssets) {
-            menuStatusEl.innerText = 'Select Difficulty:';
-            menuInstructionsEl.style.display = 'block';
-            updateMenuSelection();
+            assets.pipeTop = topCanvas;
         }
-    }
 
-    function updateMenuSelection() {
-        difficultyListEl.innerHTML = '';
-        DIFFICULTY_NAMES.forEach((name, index) => {
-            const option = document.createElement('div');
-            option.className = 'difficulty-option';
-            option.innerText = name;
-            option.dataset.index = index;
-            if (index === selectedDifficultyIndex) {
-                option.classList.add('selected');
+        function showMenu() {
+            gameState = 'menu';
+            gameOverContainerEl.style.display = 'none';
+            scoreEl.style.display = 'none';
+            menuContainerEl.style.display = 'block';
+
+            if (assetsLoaded === totalAssets) {
+                menuStatusEl.innerText = 'Select Difficulty:';
+                menuInstructionsEl.style.display = 'block';
+                updateMenuSelection();
             }
-            difficultyListEl.appendChild(option);
-        });
-    }
+        }
 
-    function setGameOver() {
-        gameState = 'gameOver';
-        gameOverScoreEl.innerText = `Score: ${score}`;
-        gameOverContainerEl.style.display = 'block';
-    }
+        function updateMenuSelection() {
+            difficultyListEl.innerHTML = '';
+            DIFFICULTY_NAMES.forEach((name, index) => {
+                const option = document.createElement('div');
+                option.className = 'difficulty-option';
+                option.innerText = name;
+                option.dataset.index = index;
+                if (index === selectedDifficultyIndex) {
+                    option.classList.add('selected');
+                }
+                difficultyListEl.appendChild(option);
+            });
+        }
 
-    function startGame() {
-        // --- UPDATED: Set all game variables from difficulty ---
-        const diff = DIFFICULTY_NAMES[selectedDifficultyIndex];
-        gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
-        gamePipeSpeed = DIFFICULTY_LEVELS[diff]['PIPE_SPEED'];
-        gamePipeSpacing = DIFFICULTY_LEVELS[diff]['PIPE_SPACING'];
-        gameGravity = DIFFICULTY_LEVELS[diff]['GRAVITY'];
-        gameFlapStrength = DIFFICULTY_LEVELS[diff]['FLAP_STRENGTH'];
-        gameHorizontalSpeed = DIFFICULTY_LEVELS[diff]['HORIZONTAL_SPEED'];
-        // --- End of update ---
+        function setGameOver() {
+            gameState = 'gameOver';
+            gameOverScoreEl.innerText = `Score: ${score}`;
+            gameOverContainerEl.style.display = 'block';
+        }
 
-        bird = {
-            x: canvas.width / 4,
-            y: canvas.height / 2,
-            width: BIRD_WIDTH,
-            height: BIRD_HEIGHT,
-            velocityY: 0,
-            velocityX: 0
-        };
-        pipes = [];
-        score = 0;
-        frame = 0;
-        scoreEl.innerText = score;
+        function startGame() {
+            const diff = DIFFICULTY_NAMES[selectedDifficultyIndex];
+            gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
+            gamePipeSpeed = DIFFICULTY_LEVELS[diff]['PIPE_SPEED'];
+            gamePipeSpacing = DIFFICULTY_LEVELS[diff]['PIPE_SPACING'];
+            gameGravity = DIFFICULTY_LEVELS[diff]['GRAVITY'];
+            gameFlapStrength = DIFFICULTY_LEVELS[diff]['FLAP_STRENGTH'];
+            gameHorizontalSpeed = DIFFICULTY_LEVELS[diff]['HORIZONTAL_SPEED'];
 
-        // Enter countdown state (physics paused)
-        gameState = 'countdown';
-        menuContainerEl.style.display = 'none';
-        gameOverContainerEl.style.display = 'none';
-        scoreEl.style.display = 'block';
+            bird = {
+                x: canvas.width / 4,
+                y: canvas.height / 2,
+                width: BIRD_WIDTH,
+                height: BIRD_HEIGHT,
+                velocityY: 0,
+                velocityX: 0
+            };
+            pipes = [];
+            score = 0;
+            frame = 0;
+            scoreEl.innerText = score;
 
-        // Countdown before vision becomes active and physics start
-        window.visionEnabled = false; // ensure vision doesn't trigger until countdown ends
-        countdownOverlay.style.display = 'block';
-        countdownOverlay.innerText = "3";
-        let countdown = 3;
-        const countdownTimer = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-                countdownOverlay.innerText = String(countdown);
-            } else {
-                clearInterval(countdownTimer);
-                countdownOverlay.style.display = 'none';
-                // enable vision input and start physics
-                window.visionEnabled = true;
-                gameState = 'playing';
+            gameState = 'countdown';
+            menuContainerEl.style.display = 'none';
+            gameOverContainerEl.style.display = 'none';
+            scoreEl.style.display = 'block';
+
+            window.visionEnabled = false; 
+            countdownOverlay.style.display = 'block';
+            countdownOverlay.innerText = "3";
+            let countdown = 3;
+            const countdownTimer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    countdownOverlay.innerText = String(countdown);
+                } else {
+                    clearInterval(countdownTimer);
+                    countdownOverlay.style.display = 'none';
+                    window.visionEnabled = true;
+                    gameState = 'playing';
+                }
+            }, 1000);
+        }
+
+        function spawnPipe() {
+            const gapTop = Math.random() * (canvas.height - gamePipeGap - 100) + 50;
+            const gapEnd = gapTop + gamePipeGap;
+
+            pipes.push({
+                x: canvas.width,
+                width: PIPE_WIDTH,
+                gapTop: gapTop,
+                gapHeight: gamePipeGap,
+                topRectY: gapTop - pipeImgHeight,
+                bottomRectY: gapEnd,
+                passed: false
+            });
+        }
+
+        function getHitbox(bird) {
+            const dx = HITBOX_X_SHRINK / 2;
+            const dy = HITBOX_Y_SHRINK / 2;
+            return {
+                x: bird.x + dx,
+                y: bird.y + dy,
+                width: bird.width - HITBOX_X_SHRINK,
+                height: bird.height - HITBOX_Y_SHRINK
+            };
+        }
+
+        function updateBird() {
+            bird.velocityY += gameGravity;
+
+            if (controls.up) {
+                bird.velocityY = gameFlapStrength;
+                controls.up = false;
             }
-        }, 1000);
-    }
-
-    function spawnPipe() {
-        const gapTop = Math.random() * (canvas.height - gamePipeGap - 100) + 50;
-        const gapEnd = gapTop + gamePipeGap;
-
-        pipes.push({
-            x: canvas.width,
-            width: PIPE_WIDTH,
-            gapTop: gapTop,
-            gapHeight: gamePipeGap,
-            topRectY: gapTop - pipeImgHeight,
-            bottomRectY: gapEnd,
-            passed: false
-        });
-    }
-
-    function getHitbox(bird) {
-        const dx = HITBOX_X_SHRINK / 2;
-        const dy = HITBOX_Y_SHRINK / 2;
-        return {
-            x: bird.x + dx,
-            y: bird.y + dy,
-            width: bird.width - HITBOX_X_SHRINK,
-            height: bird.height - HITBOX_Y_SHRINK
-        };
-    }
-
-    function updateBird() {
-        bird.velocityY += gameGravity;
-
-        if (controls.up) {
-            bird.velocityY = gameFlapStrength;
-            controls.up = false;
-        }
-        if (controls.down) {
-            bird.velocityY += FAST_FALL_STRENGTH;
-        }
-
-        bird.velocityX = 0;
-        if (controls.left) {
-            bird.velocityX = -gameHorizontalSpeed;
-        }
-        if (controls.right) {
-            bird.velocityX = gameHorizontalSpeed;
-        }
-
-        bird.y += bird.velocityY;
-        bird.x += bird.velocityX;
-
-        if (bird.x < 0) bird.x = 0;
-        if (bird.x + bird.width > canvas.width) bird.x = canvas.width - bird.width;
-
-        const hitbox = getHitbox(bird);
-        if (hitbox.y + hitbox.height > canvas.height || hitbox.y < 0) {
-            setGameOver();
-        }
-    }
-
-    function updatePipes() {
-        if (frame % gamePipeSpacing === 0) {
-            spawnPipe();
-        }
-
-        for (let i = pipes.length - 1; i >= 0; i--) {
-            const pipe = pipes[i];
-            pipe.x -= gamePipeSpeed;
-
-            if (pipe.x + pipe.width < 0) {
-                pipes.splice(i, 1);
-                continue;
+            if (controls.down) {
+                bird.velocityY += FAST_FALL_STRENGTH;
             }
 
-            if (!pipe.passed && pipe.x < bird.x) {
-                pipe.passed = true;
-                score++;
-                scoreEl.innerText = score;
+            bird.velocityX = 0;
+            if (controls.left) {
+                bird.velocityX = -gameHorizontalSpeed;
+            }
+            if (controls.right) {
+                bird.velocityX = gameHorizontalSpeed;
             }
 
-            if (checkCollision(bird, pipe)) {
+            bird.y += bird.velocityY;
+            bird.x += bird.velocityX;
+
+            if (bird.x < 0) bird.x = 0;
+            if (bird.x + bird.width > canvas.width) bird.x = canvas.width - bird.width;
+
+            const hitbox = getHitbox(bird);
+            if (hitbox.y + hitbox.height > canvas.height || hitbox.y < 0) {
                 setGameOver();
             }
         }
-    }
 
-    function checkCollision(bird, pipe) {
-        const hitbox = getHitbox(bird);
-
-        if (hitbox.x < pipe.x + pipe.width && hitbox.x + hitbox.width > pipe.x) {
-            if (hitbox.y < pipe.gapTop) {
-                return true;
+        function updatePipes() {
+            if (frame % gamePipeSpacing === 0) {
+                spawnPipe();
             }
-            if (hitbox.y + hitbox.height > pipe.bottomRectY) {
-                return true;
-            }
-        }
 
-        return false;
-    }
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                const pipe = pipes[i];
+                pipe.x -= gamePipeSpeed;
 
-    // --- Rendering ---
-
-    function drawBird() {
-        if (assets.bird.complete) {
-            ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
-        } else {
-            ctx.fillStyle = 'yellow';
-            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-        }
-    }
-
-    function drawPipes() {
-        if (!assets.pipeTop) {
-            ctx.fillStyle = '#008000';
-            pipes.forEach(pipe => {
-                ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapTop);
-                ctx.fillRect(pipe.x, pipe.gapTop + pipe.gapHeight, pipe.width, canvas.height - (pipe.gapTop + pipe.gapHeight));
-            });
-            return;
-        }
-
-        pipes.forEach(pipe => {
-            ctx.drawImage(assets.pipeTop, pipe.x, pipe.topRectY, pipe.width, pipeImgHeight);
-            ctx.drawImage(assets.pipeBottom, pipe.x, pipe.bottomRectY, pipe.width, pipeImgHeight);
-        });
-    }
-
-    function drawBackground() {
-        ctx.fillStyle = '#70c5ce';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-
-    // --- Main Game Loop ---
-
-    function gameLoop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBackground();
-
-        switch (gameState) {
-            case 'menu':
-                drawBird(); // Show bird
-                if (assetsLoaded === totalAssets) {
-                    if (controls.up) {
-                        selectedDifficultyIndex = (selectedDifficultyIndex - 1 + DIFFICULTY_NAMES.length) % DIFFICULTY_NAMES.length;
-                        updateMenuSelection();
-                        controls.up = false; // Consume input
-                    }
-                    if (controls.down) {
-                        selectedDifficultyIndex = (selectedDifficultyIndex + 1) % DIFFICULTY_NAMES.length;
-                        updateMenuSelection();
-                        controls.down = false; // Consume input
-                    }
-                    if (controls.enter) {
-                        startGame();
-                        controls.enter = false; // Consume input
-                    }
+                if (pipe.x + pipe.width < 0) {
+                    pipes.splice(i, 1);
+                    continue;
                 }
-                break;
 
-            case 'countdown':
-                // During countdown we only render the bird (no physics)
-                drawBird();
-                drawPipes();
-                break;
-
-            case 'playing':
-                frame++;
-                updateBird();
-                updatePipes();
-                drawPipes();
-                drawBird();
-                break;
-
-            case 'gameOver':
-                drawPipes();
-                drawBird();
-                if (controls.enter) {
-                    showMenu();
-                    controls.enter = false;
+                if (!pipe.passed && pipe.x < bird.x) {
+                    pipe.passed = true;
+                    score++;
+                    scoreEl.innerText = score;
                 }
-                break;
+
+                if (checkCollision(bird, pipe)) {
+                    setGameOver();
+                }
+            }
         }
 
-        requestAnimationFrame(gameLoop);
-    }
+        function checkCollision(bird, pipe) {
+            const hitbox = getHitbox(bird);
 
-    // ------------------------ VISION INTEGRATION ------------------------
-    // Two-arm Y detection that triggers controls.up on BOTH UP and DOWN transitions.
-    (function setupVision() {
-        // Config - tweak these if needed
-        const HOLD_FRAMES = 5;       // require several frames of consistency
-        const COOLDOWN_MS = 300;     // minimum ms between triggers
-        const THRESHOLD_OFFSET = 0;  // offset for comparing wrist vs shoulder
-        const THRESHOLD = -0.2;      // loosened threshold for detecting up/down
-
-        // landmarks: shoulders(11,12), elbows(13,14), wrists(15,16)
-        const L_SH = 11, R_SH = 12, L_EL = 13, R_EL = 14, L_WR = 15, R_WR = 16;
-
-        // State variables
-        let lastArmState = "unknown"; // "up" or "down" or "unknown"
-        let consecutiveFrames = 0;
-        let lastTriggerTime = 0;
-
-        // Vision enable flag (set true after countdown)
-        window.visionEnabled = false;
-
-        // Debug canvas context
-        const debugCanvas = document.getElementById("debugVideoCanvas");
-        const debugCtx = debugCanvas.getContext("2d");
-        const debugInfo = document.getElementById("debugInfo");
-
-        // Create a hidden video element (MediaPipe's Camera expects a video element)
-        const visionVideo = document.createElement("video");
-        visionVideo.style.display = "none";
-        visionVideo.autoplay = true;
-        visionVideo.playsInline = true;
-        document.body.appendChild(visionVideo);
-
-        // Initialize MediaPipe Pose
-        const poseDetector = new Pose({
-            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
-        });
-
-        poseDetector.setOptions({
-            modelComplexity: 1,
-            smoothLandmarks: true,
-            enableSegmentation: false,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
-
-        poseDetector.onResults(onPoseResults);
-
-        // Start camera
-        let camera;
-        try {
-            camera = new Camera(visionVideo, {
-                onFrame: async () => {
-                    await poseDetector.send({ image: visionVideo });
-                },
-                width: 640,
-                height: 480
-            });
-            camera.start();
-            debugInfo.textContent = "Camera started - waiting for landmarks...";
-        } catch (err) {
-            debugInfo.textContent = "Camera error: " + err.message;
-            console.error("Camera start error", err);
-        }
-
-        // Keep last detected command for debug text
-        let lastDetectedCommand = "none";
-
-        function onPoseResults(results) {
-            // draw camera into debug canvas
-            if (results.image) {
-                debugCtx.save();
-                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-                debugCtx.drawImage(results.image, 0, 0, debugCanvas.width, debugCanvas.height);
+            if (hitbox.x < pipe.x + pipe.width && hitbox.x + hitbox.width > pipe.x) {
+                if (hitbox.y < pipe.gapTop) {
+                    return true;
+                }
+                if (hitbox.y + hitbox.height > pipe.bottomRectY) {
+                    return true;
+                }
             }
 
-            if (!results.poseLandmarks || !results.poseLandmarks.length) {
-                debugInfo.textContent = "No landmarks detected";
-                debugCtx.restore();
+            return false;
+        }
+
+
+        function drawBird() {
+            if (assets.bird.complete) {
+                ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
+            } else {
+                ctx.fillStyle = 'yellow';
+                ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+            }
+        }
+
+        function drawPipes() {
+            if (!assets.pipeTop) {
+                ctx.fillStyle = '#008000';
+                pipes.forEach(pipe => {
+                    ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapTop);
+                    ctx.fillRect(pipe.x, pipe.gapTop + pipe.gapHeight, pipe.width, canvas.height - (pipe.gapTop + pipe.gapHeight));
+                });
                 return;
             }
 
-            const lm = results.poseLandmarks;
-
-            // draw points: shoulders white, elbows yellow, wrists red
-            function drawPoint(idx, color) {
-                const p = lm[idx];
-                const sx = p.x * debugCanvas.width;
-                const sy = p.y * debugCanvas.height;
-                debugCtx.beginPath();
-                debugCtx.arc(sx, sy, 8, 0, Math.PI*2);
-                debugCtx.fillStyle = color;
-                debugCtx.fill();
-            }
-
-            drawPoint(L_SH, "white");
-            drawPoint(R_SH, "white");
-            drawPoint(L_EL, "yellow");
-            drawPoint(R_EL, "yellow");
-            drawPoint(L_WR, "red");
-            drawPoint(R_WR, "red");
-
-            // compute both-up and both-down using shoulders as baseline
-            const leftWristY = lm[L_WR].y;
-            const rightWristY = lm[R_WR].y;
-            const leftShoulderY = lm[L_SH].y;
-            const rightShoulderY = lm[R_SH].y;
-
-            // average shoulder and wrist values
-            const avgShoulderY = (leftShoulderY + rightShoulderY) / 2;
-            const avgWristY = (leftWristY + rightWristY) / 2;
-
-            // detect up/down relative to shoulders with threshold
-            const bothUp = (leftWristY + THRESHOLD_OFFSET < leftShoulderY - THRESHOLD) &&
-                            (rightWristY + THRESHOLD_OFFSET < rightShoulderY - THRESHOLD);
-
-            const bothDown = (leftWristY - THRESHOLD_OFFSET > leftShoulderY + THRESHOLD) &&
-                             (rightWristY - THRESHOLD_OFFSET > rightShoulderY + THRESHOLD);
-
-            // determine current observed state
-            let observedState = "neutral";
-            if (bothUp) observedState = "up";
-            else if (bothDown) observedState = "down";
-            console.log("observed state", observedState);
-
-            // require consecutive frames for stability
-            if (observedState === lastArmState) {
-                consecutiveFrames = 0; // no change
-            } else {
-                if (observedState === "neutral") {
-                    consecutiveFrames = 0;
-                } else {
-                    consecutiveFrames++;
-                }
-            }
-
-            // when we have enough stable frames and the state is different,
-            // consider it a transition and trigger action (both up and both down)
-            if (consecutiveFrames >= HOLD_FRAMES && observedState !== lastArmState) {
-                const now = performance.now();
-                console.log("first if");
-
-                // **Update lastDetectedCommand immediately for debug** (so debug shows it)
-                lastDetectedCommand = observedState.toUpperCase();
-
-                // Debug prints to help diagnose gating conditions
-                console.log("DEBUG: cooldownElapsed=", now - lastTriggerTime, "COOLDOWN_MS=", COOLDOWN_MS);
-                console.log("DEBUG: gameState=", gameState, "visionEnabled=", window.visionEnabled);
-
-                // Only trigger in-game action if vision is enabled and cooldown passed and we are playing
-                if (now - lastTriggerTime > COOLDOWN_MS && (gameState === 'playing') && window.visionEnabled) {
-                    console.log("second if - firing control");
-                    // For Option A: trigger on BOTH up and down transitions
-                    controls.up = true;
-                    lastTriggerTime = now;
-                }
-                lastArmState = observedState;
-                consecutiveFrames = 0;
-            }
-            console.log("lastDetected", lastDetectedCommand);
-
-            // update debug text (more verbose for troubleshooting)
-            debugInfo.textContent =
-                `LeftWrY: ${leftWristY.toFixed(3)}  LShY: ${leftShoulderY.toFixed(3)}\n` +
-                `RightWrY:${rightWristY.toFixed(3)}  RShY: ${rightShoulderY.toFixed(3)}\n` +
-                `AvgWr:  ${avgWristY.toFixed(3)}  AvgSh: ${avgShoulderY.toFixed(3)}\n` +
-                `Observed: ${observedState}  LastState: ${lastArmState}\n` +
-                `LastCmd: ${lastDetectedCommand}\n` +
-                `(visionEnabled: ${window.visionEnabled})`;
-
-            // draw command overlay on the debug canvas
-            debugCtx.fillStyle = "rgba(0,0,0,0.5)";
-            debugCtx.fillRect(8, debugCanvas.height - 72, debugCanvas.width - 16, 64);
-            debugCtx.fillStyle = "white";
-            debugCtx.font = "20px monospace";
-            debugCtx.fillText(`Command: ${lastDetectedCommand}`, 16, debugCanvas.height - 40);
-
-            debugCtx.restore();
+            pipes.forEach(pipe => {
+                ctx.drawImage(assets.pipeTop, pipe.x, pipe.topRectY, pipe.width, pipeImgHeight);
+                ctx.drawImage(assets.pipeBottom, pipe.x, pipe.bottomRectY, pipe.width, pipeImgHeight);
+            });
         }
-    })();
-    // ---------------------- end vision integration ----------------------
 
-    // --- Start the game ---
-    function init() {
-        setupKeyboardControls();
+        function drawBackground() {
+            ctx.fillStyle = '#70c5ce';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
 
-        // Initialize bird for menu
-        bird = {
-            x: canvas.width / 4,
-            y: canvas.height / 2,
-            width: BIRD_WIDTH,
-            height: BIRD_HEIGHT,
-            velocityY: 0,
-            velocityX: 0
-        };
 
-        // Show menu immediately
-        showMenu();
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
 
-        // Start loading assets
-        assets.bird.onload = onAssetLoad;
-        assets.pipeBottom.onload = onAssetLoad;
+            switch (gameState) {
+                case 'menu':
+                    drawBird(); 
+                    if (assetsLoaded === totalAssets) {
+                        if (controls.up) {
+                            selectedDifficultyIndex = (selectedDifficultyIndex - 1 + DIFFICULTY_NAMES.length) % DIFFICULTY_NAMES.length;
+                            updateMenuSelection();
+                            controls.up = false; 
+                        }
+                        if (controls.down) {
+                            selectedDifficultyIndex = (selectedDifficultyIndex + 1) % DIFFICULTY_NAMES.length;
+                            updateMenuSelection();
+                            controls.down = false; 
+                        }
+                        if (controls.enter) {
+                            startGame();
+                            controls.enter = false; 
+                        }
+                    }
+                    break;
 
-        // ************
-        // IMPORTANT: Make sure these paths are correct for your Django setup!
-        // You may need to use Django's {% static 'flappyBird/bird.png' %} template tag.
-        // ************
-        assets.bird.src = "{% static 'bird.png' %}";
-        assets.pipeBottom.src = "{% static 'pipe.png' %}";
+                case 'countdown':
+                    drawBird();
+                    drawPipes();
+                    break;
 
-        // Start game loop
-        gameLoop();
-    }
+                case 'playing':
+                    frame++;
+                    updateBird();
+                    updatePipes();
+                    drawPipes();
+                    drawBird();
+                    break;
 
-    init();
+                case 'gameOver':
+                    drawPipes();
+                    drawBird();
+                    if (controls.enter) {
+                        showMenu();
+                        controls.enter = false;
+                    }
+                    break;
+            }
 
-</script>
-</body>
+            requestAnimationFrame(gameLoop);
+        }
+
+        (function setupVision() {
+            const HOLD_FRAMES = 5;       
+            const COOLDOWN_MS = 300;     
+            const THRESHOLD_OFFSET = 0;  
+            const THRESHOLD = -0.2;      
+
+            const L_SH = 11, R_SH = 12, L_EL = 13, R_EL = 14, L_WR = 15, R_WR = 16;
+
+            let lastArmState = "unknown"; 
+            let consecutiveFrames = 0;
+            let lastTriggerTime = 0;
+
+            window.visionEnabled = false;
+
+            const debugCanvas = document.getElementById("debugVideoCanvas");
+            const debugCtx = debugCanvas.getContext("2d");
+            const debugInfo = document.getElementById("debugInfo");
+
+            const visionVideo = document.createElement("video");
+            visionVideo.style.display = "none";
+            visionVideo.autoplay = true;
+            visionVideo.playsInline = true;
+            document.body.appendChild(visionVideo);
+
+            const poseDetector = new Pose({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
+            });
+
+            poseDetector.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                enableSegmentation: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            poseDetector.onResults(onPoseResults);
+
+            let camera;
+            try {
+                camera = new Camera(visionVideo, {
+                    onFrame: async () => {
+                        await poseDetector.send({ image: visionVideo });
+                    },
+                    width: 640,
+                    height: 480
+                });
+                camera.start();
+                debugInfo.textContent = "Camera started - waiting for landmarks...";
+            } catch (err) {
+                debugInfo.textContent = "Camera error: " + err.message;
+                console.error("Camera start error", err);
+            }
+
+            let lastDetectedCommand = "none";
+
+            function onPoseResults(results) {
+                if (results.image) {
+                    debugCtx.save();
+                    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
+                    debugCtx.drawImage(results.image, 0, 0, debugCanvas.width, debugCanvas.height);
+                }
+
+                if (!results.poseLandmarks || !results.poseLandmarks.length) {
+                    debugInfo.textContent = "No landmarks detected";
+                    debugCtx.restore();
+                    return;
+                }
+
+                const lm = results.poseLandmarks;
+
+                function drawPoint(idx, color) {
+                    const p = lm[idx];
+                    const sx = p.x * debugCanvas.width;
+                    const sy = p.y * debugCanvas.height;
+                    debugCtx.beginPath();
+                    debugCtx.arc(sx, sy, 8, 0, Math.PI*2);
+                    debugCtx.fillStyle = color;
+                    debugCtx.fill();
+                }
+
+                drawPoint(L_SH, "white");
+                drawPoint(R_SH, "white");
+                drawPoint(L_EL, "yellow");
+                drawPoint(R_EL, "yellow");
+                drawPoint(L_WR, "red");
+                drawPoint(R_WR, "red");
+
+                const leftWristY = lm[L_WR].y;
+                const rightWristY = lm[R_WR].y;
+                const leftShoulderY = lm[L_SH].y;
+                const rightShoulderY = lm[R_SH].y;
+
+                const avgShoulderY = (leftShoulderY + rightShoulderY) / 2;
+                const avgWristY = (leftWristY + rightWristY) / 2;
+
+                const bothUp = (leftWristY + THRESHOLD_OFFSET < leftShoulderY - THRESHOLD) &&
+                                (rightWristY + THRESHOLD_OFFSET < rightShoulderY - THRESHOLD);
+
+                const bothDown = (leftWristY - THRESHOLD_OFFSET > leftShoulderY + THRESHOLD) &&
+                                (rightWristY - THRESHOLD_OFFSET > rightShoulderY + THRESHOLD);
+
+                let observedState = "neutral";
+                if (bothUp) observedState = "up";
+                else if (bothDown) observedState = "down";
+                console.log("observed state", observedState);
+
+                if (observedState === lastArmState) {
+                    consecutiveFrames = 0; 
+                } else {
+                    if (observedState === "neutral") {
+                        consecutiveFrames = 0;
+                    } else {
+                        consecutiveFrames++;
+                    }
+                }
+
+
+                if (consecutiveFrames >= HOLD_FRAMES && observedState !== lastArmState) {
+                    const now = performance.now();
+                    console.log("first if");
+
+                    lastDetectedCommand = observedState.toUpperCase();
+
+                    console.log("DEBUG: cooldownElapsed=", now - lastTriggerTime, "COOLDOWN_MS=", COOLDOWN_MS);
+                    console.log("DEBUG: gameState=", gameState, "visionEnabled=", window.visionEnabled);
+
+                    if (now - lastTriggerTime > COOLDOWN_MS && (gameState === 'playing') && window.visionEnabled) {
+                        console.log("second if - firing control");
+                        controls.up = true;
+                        lastTriggerTime = now;
+                    }
+                    lastArmState = observedState;
+                    consecutiveFrames = 0;
+                }
+                console.log("lastDetected", lastDetectedCommand);
+
+                debugInfo.textContent =
+                    `LeftWrY: ${leftWristY.toFixed(3)}  LShY: ${leftShoulderY.toFixed(3)}\n` +
+                    `RightWrY:${rightWristY.toFixed(3)}  RShY: ${rightShoulderY.toFixed(3)}\n` +
+                    `AvgWr:  ${avgWristY.toFixed(3)}  AvgSh: ${avgShoulderY.toFixed(3)}\n` +
+                    `Observed: ${observedState}  LastState: ${lastArmState}\n` +
+                    `LastCmd: ${lastDetectedCommand}\n` +
+                    `(visionEnabled: ${window.visionEnabled})`;
+
+                debugCtx.fillStyle = "rgba(0,0,0,0.5)";
+                debugCtx.fillRect(8, debugCanvas.height - 72, debugCanvas.width - 16, 64);
+                debugCtx.fillStyle = "white";
+                debugCtx.font = "20px monospace";
+                debugCtx.fillText(`Command: ${lastDetectedCommand}`, 16, debugCanvas.height - 40);
+
+                debugCtx.restore();
+            }
+        })();
+  
+        function init() {
+            setupKeyboardControls();
+
+            bird = {
+                x: canvas.width / 4,
+                y: canvas.height / 2,
+                width: BIRD_WIDTH,
+                height: BIRD_HEIGHT,
+                velocityY: 0,
+                velocityX: 0
+            };
+
+            showMenu();
+            assets.bird.onload = onAssetLoad;
+            assets.pipeBottom.onload = onAssetLoad;
+            assets.bird.src = "{% static 'bird.png' %}";
+            assets.pipeBottom.src = "{% static 'pipe.png' %}";
+
+            gameLoop();
+        }
+
+        init();
+
+    </script>
+    </body>
 </html>
