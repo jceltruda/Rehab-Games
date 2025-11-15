@@ -137,32 +137,48 @@
         // --- Game Constants (from Python file) ---
         const BIRD_WIDTH = 95;
         const BIRD_HEIGHT = 95;
-        const GRAVITY = 0.25;
-        const FLAP_STRENGTH = -5.5;
-        const FAST_FALL_STRENGTH = 1.5;
-        const HORIZONTAL_SPEED = 3;
+        const FAST_FALL_STRENGTH = 1.5; // This can stay constant
         const PIPE_WIDTH = 80;
 
         // --- Hitbox Adjustment (from Python file) ---
         const HITBOX_X_SHRINK = 40;
         const HITBOX_Y_SHRINK = 54;
 
-        // --- Difficulty Settings (from Python file) ---
+        // --- Difficulty Settings ---
+        // Physics are now *inside* the difficulty levels
         const DIFFICULTY_LEVELS = {
             'Easy': {
-                'PIPE_GAP': 225, 'PIPE_SPEED': 1.5, 'PIPE_SPACING': 147 
+                'PIPE_GAP': 275,        // VERY wide gap
+                'PIPE_SPEED': 1.2,      // Very slow
+                'PIPE_SPACING': 180,    // Lots of time between pipes
+                'GRAVITY': 0.08,        // Extremely floaty
+                'FLAP_STRENGTH': -3.5,  // Very gentle, small hop
+                'HORIZONTAL_SPEED': 2.5 // Slower side-to-side
             },
             'Medium': {
-                'PIPE_GAP': 175, 'PIPE_SPEED': 2.0, 'PIPE_SPACING': 120
+                'PIPE_GAP': 225,        // What 'Easy' was
+                'PIPE_SPEED': 1.6,      // A bit faster
+                'PIPE_SPACING': 150,    // More time than old 'Easy'
+                'GRAVITY': 0.12,        // Still floaty, but noticeable
+                'FLAP_STRENGTH': -4.0,  // Gentle hop
+                'HORIZONTAL_SPEED': 3.0 // Standard side-to-side
             },
             'Hard': {
-                'PIPE_GAP': 150, 'PIPE_SPEED': 2.5, 'PIPE_SPACING': 90
+                'PIPE_GAP': 180,        // A bit more than old 'Medium'
+                'PIPE_SPEED': 2.0,      // What 'Medium' was
+                'PIPE_SPACING': 120,    // What 'Medium' was
+                'GRAVITY': 0.18,        // What 'Medium' was
+                'FLAP_STRENGTH': -4.8,  // A solid hop, less than old 'Medium'
+                'HORIZONTAL_SPEED': 3.5 // Quicker side-to-side
             }
         };
         const DIFFICULTY_NAMES = ['Easy', 'Medium', 'Hard'];
 
         // --- Global Game Variables ---
+        // These will be set by the difficulty menu
         let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
+        let gameGravity, gameFlapStrength, gameHorizontalSpeed;
+        
         let bird, pipes, score, frame, gameState;
         let selectedDifficultyIndex = 0;
 
@@ -293,11 +309,16 @@
         }
         
         function startGame() {
+            // --- UPDATED: Set all game variables from difficulty ---
             const diff = DIFFICULTY_NAMES[selectedDifficultyIndex];
             gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
             gamePipeSpeed = DIFFICULTY_LEVELS[diff]['PIPE_SPEED'];
             gamePipeSpacing = DIFFICULTY_LEVELS[diff]['PIPE_SPACING'];
-            
+            gameGravity = DIFFICULTY_LEVELS[diff]['GRAVITY'];
+            gameFlapStrength = DIFFICULTY_LEVELS[diff]['FLAP_STRENGTH'];
+            gameHorizontalSpeed = DIFFICULTY_LEVELS[diff]['HORIZONTAL_SPEED'];
+            // --- End of update ---
+
             bird = {
                 x: canvas.width / 4,
                 y: canvas.height / 2,
@@ -317,6 +338,7 @@
         }
 
         function spawnPipe() {
+            // Use gamePipeGap (now set by difficulty)
             const gapTop = Math.random() * (canvas.height - gamePipeGap - 100) + 50; // 50px padding
             const gapEnd = gapTop + gamePipeGap;
             
@@ -343,10 +365,11 @@
         }
 
         function updateBird() {
-            bird.velocityY += GRAVITY;
+            // --- UPDATED: Use game-specific physics variables ---
+            bird.velocityY += gameGravity;
 
             if (controls.up) {
-                bird.velocityY = FLAP_STRENGTH;
+                bird.velocityY = gameFlapStrength;
                 controls.up = false; 
             }
             if (controls.down) {
@@ -355,11 +378,12 @@
             
             bird.velocityX = 0;
             if (controls.left) {
-                bird.velocityX = -HORIZONTAL_SPEED;
+                bird.velocityX = -gameHorizontalSpeed;
             }
             if (controls.right) {
-                bird.velocityX = HORIZONTAL_SPEED;
+                bird.velocityX = gameHorizontalSpeed;
             }
+            // --- End of update ---
 
             bird.y += bird.velocityY;
             bird.x += bird.velocityX;
@@ -374,12 +398,14 @@
         }
 
         function updatePipes() {
+            // Use gamePipeSpacing (now set by difficulty)
             if (frame % gamePipeSpacing === 0) {
                 spawnPipe();
             }
             
             for (let i = pipes.length - 1; i >= 0; i--) {
                 const pipe = pipes[i];
+                // Use gamePipeSpeed (now set by difficulty)
                 pipe.x -= gamePipeSpeed;
 
                 if (pipe.x + pipe.width < 0) {
