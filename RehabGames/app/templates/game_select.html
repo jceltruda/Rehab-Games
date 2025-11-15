@@ -1,14 +1,27 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Game Selection</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RehabGames - Select Game</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body>
-    <h1>Choose your arm rehab exercise.</h1>
-    <ul>
-        <li><a href="{% url 'game_pong' %}">Up/Down Arm Movement (Pong)</a></li>
-        <li><a href="{% url 'game_flappy' %}">Lateral Raises (Flappy Bird)</a></li>
-        <li><a href="{% url 'game_arkanoid' %}">Left/Right Arm Movement (Arkanoid)</a></li>
-    </ul>
+    <h1>Choose Your Game</h1>
+    <div class="game-grid">
+        <a href="{% url 'game_pong' %}" class="game-card">
+            <h3>Pong</h3>
+            <p>Vertical Arm Movement</p>
+        </a>
+        <a href="{% url 'game_flappy' %}" class="game-card">
+            <h3>Flappy Bird</h3>
+            <p>Lateral Arm Raises</p>
+        </a>
+        <a href="{% url 'game_arkanoid' %}" class="game-card">
+            <h3>Arkanoid</h3>
+            <p>Horizontal Arm Movement</p>
+        </a>
+    </div>
 </body>
 </html>

@@ -1,0 +1,135 @@
+/* --- Google Fonts Import --- */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Press+Start+2P&display=swap');
+
+/* --- CSS Variables --- */
+:root {
+    --dark-bg: #0d0221;
+    --neon-pink: #ff00ff;
+    --neon-cyan: #00ffff;
+    --neon-purple: #9f20ff;
+    --light-text: #f0f0f0;
+
+    --font-pixel: 'Press Start 2P', cursive;
+    --font-modern: 'Montserrat', sans-serif;
+
+    --glow-shadow-pink: 0 0 5px var(--neon-pink),
+                        0 0 10px var(--neon-pink),
+                        0 0 20px var(--neon-pink);
+
+    --glow-shadow-cyan: 0 0 5px var(--neon-cyan),
+                       0 0 10px var(--neon-cyan),
+                       0 0 20px var(--neon-cyan);
+}
+
+/* --- Base & Typography --- */
+body {
+    background-color: var(--dark-bg);
+    color: var(--light-text);
+    font-family: var(--font-modern);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    text-align: center;
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-family: var(--font-pixel);
+    color: var(--neon-cyan);
+    text-shadow: var(--glow-shadow-cyan);
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+h2 {
+    font-family: var(--font-modern);
+    color: var(--light-text);
+    font-weight: 400;
+    font-size: 1.25rem;
+    margin-top: 0;
+    margin-bottom: 2rem;
+}
+
+a {
+    color: var(--neon-pink);
+    text-decoration: none;
+}
+
+/* --- Homepage Specific --- */
+.home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.cta-button {
+    font-family: var(--font-pixel);
+    font-size: 1.5rem;
+    color: var(--neon-pink);
+    background-color: transparent;
+    border: 3px solid var(--neon-pink);
+    padding: 1rem 2rem;
+    cursor: pointer;
+    text-shadow: var(--glow-shadow-pink);
+    box-shadow: 0 0 10px var(--neon-pink) inset, 0 0 10px var(--neon-pink);
+    transition: all 0.3s ease;
+}
+
+.cta-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--neon-pink) inset, 0 0 30px var(--neon-pink);
+}
+
+/* --- Game Selection Page --- */
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    width: 100%;
+    max-width: 1200px;
+    margin-top: 2rem;
+}
+
+.game-card {
+    background-color: rgba(15, 2, 35, 0.5);
+    border: 2px solid var(--neon-purple);
+    padding: 2rem;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 0 15px var(--neon-purple);
+}
+
+.game-card h3 {
+    font-family: var(--font-pixel);
+    font-size: 1.5rem;
+    color: var(--neon-pink);
+    margin: 0 0 1rem 0;
+}
+
+.game-card p {
+    font-family: var(--font-modern);
+    font-size: 1rem;
+    color: var(--light-text);
+    margin: 0;
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    .game-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
