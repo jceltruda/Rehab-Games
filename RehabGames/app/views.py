@@ -14,3 +14,6 @@ def game_flappy_view(request):
 
 def game_arkanoid_view(request):
     return render(request, 'game_arkanoid.html')
+
+def vision_page(request):
+    return render(request, 'vision.html')
