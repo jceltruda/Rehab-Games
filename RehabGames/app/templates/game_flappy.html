@@ -214,30 +214,31 @@
     // --- Difficulty Settings ---
     const DIFFICULTY_LEVELS = {
         'Easy': {
-            'PIPE_GAP': 275,
-            'PIPE_SPEED': 1.2,
-            'PIPE_SPACING': 180,
-            'GRAVITY': 0.08,
-            'FLAP_STRENGTH': -3.5,
-            'HORIZONTAL_SPEED': 2.5
+            'PIPE_GAP': 300,          // wider gap = easier
+            'PIPE_SPEED': 1.0,        // slower pipes
+            'PIPE_SPACING': 200,      // more distance between pipes
+            'GRAVITY': 0.045,         // slow fall
+            'FLAP_STRENGTH': -3.0,    // soft flap
+            'HORIZONTAL_SPEED': 2.0
         },
         'Medium': {
-            'PIPE_GAP': 225,
-            'PIPE_SPEED': 1.6,
-            'PIPE_SPACING': 150,
-            'GRAVITY': 0.12,
-            'FLAP_STRENGTH': -4.0,
-            'HORIZONTAL_SPEED': 3.0
+            'PIPE_GAP': 250,
+            'PIPE_SPEED': 1.4,
+            'PIPE_SPACING': 170,
+            'GRAVITY': 0.06,
+            'FLAP_STRENGTH': -3.8,   // moderate flap
+            'HORIZONTAL_SPEED': 2.5
         },
         'Hard': {
-            'PIPE_GAP': 180,
-            'PIPE_SPEED': 2.0,
-            'PIPE_SPACING': 120,
-            'GRAVITY': 0.18,
-            'FLAP_STRENGTH': -4.8,
-            'HORIZONTAL_SPEED': 3.5
+            'PIPE_GAP': 200,
+            'PIPE_SPEED': 1.7,
+            'PIPE_SPACING': 140,
+            'GRAVITY': 0.09,
+            'FLAP_STRENGTH': -4.2,   // strong but not insane
+            'HORIZONTAL_SPEED': 3.0
         }
     };
+
     const DIFFICULTY_NAMES = ['Easy', 'Medium', 'Hard'];
 
     // --- Global Game Variables ---
@@ -611,7 +612,7 @@
         const HOLD_FRAMES = 5;       // require several frames of consistency
         const COOLDOWN_MS = 300;     // minimum ms between triggers
         const THRESHOLD_OFFSET = 0;  // offset for comparing wrist vs shoulder
-        const THRESHOLD = 0.05;      // loosened threshold for detecting up/down
+        const THRESHOLD = -0.2;      // loosened threshold for detecting up/down
 
         // landmarks: shoulders(11,12), elbows(13,14), wrists(15,16)
         const L_SH = 11, R_SH = 12, L_EL = 13, R_EL = 14, L_WR = 15, R_WR = 16;
