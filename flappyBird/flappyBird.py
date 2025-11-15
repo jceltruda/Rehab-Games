@@ -11,7 +11,7 @@ GRAVITY = 0.25
 FLAP_STRENGTH = -5.5
 FAST_FALL_STRENGTH = 1.5
 HORIZONTAL_SPEED = 3
-PIPE_WIDTH = 80
+PIPE_WIDTH = 80 # We will scale the pipe image to this width
 
 # --- NEW: Hitbox Adjustment ---
 # Tweak these values to make the hitbox smaller than the image
@@ -23,7 +23,7 @@ HITBOX_Y_SHRINK = 54  # Try values from 4-10
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 SKY_BLUE = (112, 197, 206)
-GREEN = (0, 128, 0)
+GREEN = (0, 128, 0) # Fallback color
 YELLOW = (255, 215, 0)
 
 # --- Difficulty Settings ---
@@ -109,7 +109,6 @@ class Bird:
             pygame.draw.rect(screen, YELLOW, self.rect) # Fallback drawing
         
         # --- Optional: Uncomment this line to see your hitbox ---
-        # This line is now UNCOMMENTED so you can see the red box:
         # pygame.draw.rect(screen, (255, 0, 0), self.get_hitbox(), 2)
 
     def get_hitbox(self):
@@ -132,12 +131,27 @@ class Bird:
         return False
 
 class Pipe:
-    def __init__(self, x):
+    def __init__(self, x, pipe_image_top, pipe_image_bottom, pipe_height):
         self.x = x
         self.width = PIPE_WIDTH
-        self.gap_top = random.randint(100, SCREEN_HEIGHT - GAME_PIPE_GAP - 100)
-        self.top_rect = pygame.Rect(self.x, 0, self.width, self.gap_top)
-        self.bottom_rect = pygame.Rect(self.x, self.gap_top + GAME_PIPE_GAP, self.width, SCREEN_HEIGHT - (self.gap_top + GAME_PIPE_GAP))
+        self.pipe_image_top = pipe_image_top     # Flipped image
+        self.pipe_image_bottom = pipe_image_bottom # Regular image
+        self.pipe_height = pipe_height
+
+        # gap_start_y is the Y-coordinate for the TOP of the gap (bottom of the top pipe)
+        self.gap_start_y = random.randint(100, SCREEN_HEIGHT - GAME_PIPE_GAP - 100)
+        
+        # Y-coordinate for the BOTTOM of the gap (top of the bottom pipe)
+        self.gap_end_y = self.gap_start_y + GAME_PIPE_GAP
+        
+        # Collision rect for top pipe (pointing down)
+        # Its top-left corner is at (self.x, self.gap_start_y - self.pipe_height)
+        self.top_rect = pygame.Rect(self.x, self.gap_start_y - self.pipe_height, self.width, self.pipe_height)
+
+        # Collision rect for bottom pipe (pointing up)
+        # Its top-left corner is at (self.x, self.gap_end_y)
+        self.bottom_rect = pygame.Rect(self.x, self.gap_end_y, self.width, self.pipe_height)
+        
         self.passed = False
 
     def update(self):
@@ -146,8 +160,15 @@ class Pipe:
         self.bottom_rect.x = self.x
 
     def draw(self, screen):
-        pygame.draw.rect(screen, GREEN, self.top_rect)
-        pygame.draw.rect(screen, GREEN, self.bottom_rect)
+        if self.pipe_image_top and self.pipe_image_bottom:
+            # Draw top pipe (flipped)
+            screen.blit(self.pipe_image_top, self.top_rect.topleft)
+            # Draw bottom pipe (regular)
+            screen.blit(self.pipe_image_bottom, self.bottom_rect.topleft)
+        else:
+            # Fallback to green rects if images failed to load
+            pygame.draw.rect(screen, GREEN, self.top_rect)
+            pygame.draw.rect(screen, GREEN, self.bottom_rect)
 
 def draw_text(screen, text, font, color, x, y, center=True):
     text_surface = font.render(text, True, color)
@@ -165,6 +186,34 @@ def main():
     font_small = pygame.font.Font(None, 36)
     font_menu = pygame.font.Font(None, 48)
 
+    # --- Load Pipe Graphics ---
+    pipe_image_bottom = None
+    pipe_image_top = None
+    pipe_image_height = 500 # Default height for fallback
+
+    try:
+        # Load the image for the BOTTOM pipe (pointing up)
+        # IMPORTANT: Make sure 'flappyBird/pipe.png' is the correct path
+        pipe_image_original = pygame.image.load('flappyBird/pipe.png').convert_alpha()
+        
+        # Get original dimensions
+        original_width = pipe_image_original.get_width()
+        original_height = pipe_image_original.get_height()
+        
+        # Calculate new height based on new width (PIPE_WIDTH)
+        scale_factor = PIPE_WIDTH / original_width
+        pipe_image_height = int(original_height * scale_factor)
+        
+        # Scale the image
+        pipe_image_bottom = pygame.transform.scale(pipe_image_original, (PIPE_WIDTH, pipe_image_height))
+        
+        # Create the TOP pipe image by flipping the bottom one vertically
+        pipe_image_top = pygame.transform.flip(pipe_image_bottom, False, True)
+        
+    except pygame.error:
+        print("Warning: 'flappyBird/pipe.png' not found. Using green rectangles.")
+        
+    # --- Game State ---
     game_state = 'menu'
     bird = Bird() # Bird instance created here
     pipes = []
@@ -184,7 +233,8 @@ def main():
             handle_keyboard_input(event) 
             
             if game_state == 'playing' and event.type == SPAWN_PIPE_EVENT:
-                pipes.append(Pipe(SCREEN_WIDTH))
+                # Pass the images and height to the new pipe
+                pipes.append(Pipe(SCREEN_WIDTH, pipe_image_top, pipe_image_bottom, pipe_image_height))
             
             if event.type == pygame.KEYDOWN:
                 if game_state == 'menu':
@@ -210,7 +260,7 @@ def main():
                 elif game_state == 'game_over':
                     if event.key == pygame.K_UP or event.key == pygame.K_RETURN:
                         game_state = 'menu'
-                        pygame.time.set_timer(SPAWN_PIPE_EVENT, 0)
+                        pygame.time.set_timer(SPAWN_PIPE_EVENT, 0) # Stop pipe timer
 
         screen.fill(SKY_BLUE)
 

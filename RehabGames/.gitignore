@@ -1,2 +1,9 @@
 /rehab
 /venv
+
+# Database files
+*.sqlite3
+
+# Python cache
+__pycache__/
+*.pyc
