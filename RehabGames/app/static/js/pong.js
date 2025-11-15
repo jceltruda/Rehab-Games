@@ -1,6 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const gameButton = document.getElementById('gameControlButton');
+
+    // --- Game State ---
+    let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED'
 
     // --- Player Input Abstraction ---
     let playerInput = 'STOP'; // Possible states: 'UP', 'DOWN', 'STOP'
@@ -17,6 +21,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keyup', (e) => {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             playerInput = 'STOP';
+        }
+    });
+
+    // --- Button Control Logic ---
+    gameButton.addEventListener('click', () => {
+        if (gameState === 'START') {
+            gameState = 'PLAYING';
+            gameButton.textContent = 'Pause';
+        } else if (gameState === 'PLAYING') {
+            gameState = 'PAUSED';
+            gameButton.textContent = 'Resume';
+        } else if (gameState === 'PAUSED') {
+            gameState = 'PLAYING';
+            gameButton.textContent = 'Pause';
         }
     });
 
@@ -41,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         height: paddleHeight,
         color: 'white',
         score: 0,
-        speed: 6 // AI speed slightly slower for a beatable AI
+        speed: 6 // This is now a max speed
     };
 
     const ball = {
@@ -73,13 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
             playerPaddle.y += playerPaddle.speed;
         }
 
-        // Simple AI for AI Paddle
-        const aiCenter = aiPaddle.y + aiPaddle.height / 2;
-        if (aiCenter < ball.y - 35 && aiPaddle.y < canvas.height - aiPaddle.height) {
-            aiPaddle.y += aiPaddle.speed;
-        } else if (aiCenter > ball.y + 35 && aiPaddle.y > 0) {
-            aiPaddle.y -= aiPaddle.speed;
+        // --- Beatable AI Logic ---
+        // The AI paddle tries to follow the ball's y position, but with a slight delay.
+        // The '0.04' multiplier makes its reaction slower and more realistic.
+        const targetY = ball.y - aiPaddle.height / 2;
+        aiPaddle.y += (targetY - aiPaddle.y) * 0.04;
+
+        // Clamp the AI paddle's position to stay within the canvas
+        if (aiPaddle.y < 0) {
+            aiPaddle.y = 0;
+        } else if (aiPaddle.y > canvas.height - aiPaddle.height) {
+            aiPaddle.y = canvas.height - aiPaddle.height;
         }
+
 
         // Move the ball
         ball.x += ball.velocityX;
@@ -168,15 +192,31 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2, false);
         ctx.fillStyle = ball.color;
         ctx.fill();
+
+        // --- Draw Game State Messages ---
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '50px "Press Start 2P"';
+        ctx.textAlign = 'center';
+
+        if (gameState === 'START') {
+            ctx.fillText('Press Start', canvas.width / 2, canvas.height / 2);
+        } else if (gameState === 'PAUSED') {
+            ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+        }
+        ctx.textAlign = 'left'; // Reset alignment
     }
 
     // --- Game Loop ---
     function gameLoop() {
-        update();
+        // Only update game logic if the game is in 'PLAYING' state
+        if (gameState === 'PLAYING') {
+            update();
+        }
         draw();
         requestAnimationFrame(gameLoop);
     }
 
-    // --- Start the Game ---
+    // --- Start the Game Loop ---
+    // The loop now runs continuously, but the update() function is conditional.
     gameLoop();
 });
