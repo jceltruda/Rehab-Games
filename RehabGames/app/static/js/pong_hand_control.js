@@ -56,7 +56,7 @@ async function setupWebcam() {
     });
 }
 
-function drawWebcamOverlay(wrist, yNorm) {
+function drawWebcamOverlay(hand, yNorm) {
     if (!overlayCtx || !overlayCanvas || !videoEl) return;
 
     const w = overlayCanvas.width;
@@ -64,7 +64,7 @@ function drawWebcamOverlay(wrist, yNorm) {
 
     overlayCtx.clearRect(0, 0, w, h);
 
-    if (!wrist || typeof yNorm !== "number") {
+    if (!hand || typeof yNorm !== "number") {
         overlayCtx.beginPath();
         overlayCtx.moveTo(0, h / 2);
         overlayCtx.lineTo(w, h/2);
@@ -75,10 +75,20 @@ function drawWebcamOverlay(wrist, yNorm) {
         return;
     }
 
+    // Draw all keypoints
+    for (const keypoint of hand.keypoints) {
+        overlayCtx.beginPath();
+        overlayCtx.arc(keypoint.x, keypoint.y, 5, 0, Math.PI * 2);
+        overlayCtx.fillStyle = "rgba(255, 0, 0, 0.7)"; // Red dots for all points
+        overlayCtx.fill();
+        overlayCtx.closePath();
+    }
+
+    const wrist = hand.keypoints[0];
     const wx = wrist.x;
     const wy = wrist.y;
 
-    // 1) wrist circle
+    // 1) wrist circle (larger and green)
     overlayCtx.beginPath();
     overlayCtx.arc(wx, wy, 10, 0, Math.PI * 2);
     overlayCtx.fillStyle = "rgba(0, 255, 0, 0.9)";
@@ -100,19 +110,20 @@ async function trackHandsLoop() {
     if (!running || !detector || !videoEl) return;
 
     const hands = await detector.estimateHands(videoEl, {
-        flipHorizontal: true
+        flipHorizontal: false // The CSS transform handles the mirroring
     });
 
     if (hands.length > 0) {
         const hand = hands[0];
         const wrist = hand.keypoints[0];
 
+        // The video is flipped, so we need to flip the X coordinate for normalization
         const yNorm = wrist.y / videoEl.videoHeight;
         const clamped = Math.min(1, Math.max(0, yNorm));
 
         window.handY = clamped;
 
-        drawWebcamOverlay(wrist, clamped);
+        drawWebcamOverlay(hand, clamped);
     } else {
         window.handY = null;
         drawWebcamOverlay(null, null);
