@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html>
+<head>
+    <title>Vision Game Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
+    <script src="{% static 'visionEngine.js' %}"></script>
+    <script src="{% static 'YDetector.js' %}"></script>
+    <script src="{% static 'XDetector.js' %}"></script>
+
+
+    <style>
+        #canvas { width: 640px; height: 480px; border: 2px solid black; }
+        #debug { font-family: monospace; white-space: pre; margin-top: 10px; }
+        #controls { margin-bottom: 10px; }
+    </style>
+</head>
+
+<body>
+    <div id="controls">
+        Hand:
+        <select id="handSelect">
+            <option value="right">Right</option>
+            <option value="left">Left</option>
+        </select>
+        <label><input type="checkbox" id="xAxis" checked> Enable X</label>
+        <label><input type="checkbox" id="yAxis" checked> Enable Y</label>
+    </div>
+
+    <canvas id="canvas" width="640" height="480"></canvas>
+    <div id="debug"></div>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const debug = document.getElementById("debug");
+
+        // Initialize vision engine
+        VisionEngine.init({ hand: "right" });
+
+        const handSelect = document.getElementById("handSelect");
+        const xAxisCheckbox = document.getElementById("xAxis");
+        const yAxisCheckbox = document.getElementById("yAxis");
+
+        handSelect.addEventListener("change", () => {
+            VisionEngine.init({ hand: handSelect.value });
+        });
+
+        // Initialize detectors
+        XDetector.init({ mode: "continuous", threshold: 0.015 });
+        YDetector.init({ mode: "continuous", threshold: 0.015 });
+
+        let lastXDir = "CENTER";
+        let lastYDir = "CENTER";
+
+        XDetector.onMove(dir => {
+            if (!xAxisCheckbox.checked) return;
+            lastXDir = dir;
+            // For testing: dispatch arrow key
+            if(dir === "LEFT") window.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowLeft"}));
+            if(dir === "RIGHT") window.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowRight"}));
+        });
+
+        YDetector.onMove(dir => {
+            if (!yAxisCheckbox.checked) return;
+            lastYDir = dir;
+            // For testing: dispatch arrow key
+            if(dir === "UP") window.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowUp"}));
+            if(dir === "DOWN") window.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowDown"}));
+        });
+
+        // Draw debug canvas
+        VisionEngine.onHandMove(coords => {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            // Draw hand
+            ctx.beginPath();
+            ctx.arc(coords.x*canvas.width, coords.y*canvas.height, 10, 0, Math.PI*2);
+            ctx.fillStyle = "red";
+            ctx.fill();
+
+            // Display debug info
+            debug.textContent =
+                `Hand: ${handSelect.value}\n` +
+                `X: ${coords.x.toFixed(3)} Y: ${coords.y.toFixed(3)} Z: ${coords.z.toFixed(3)}\n` +
+                `Direction: ${lastYDir} ${lastXDir}`;
+        });
+    </script>
+</body>
+</html>
