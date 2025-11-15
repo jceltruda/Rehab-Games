@@ -2,6 +2,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const gameButton = document.getElementById('gameControlButton');
+    const easyBtn = document.getElementById('easyBtn');
+    const mediumBtn = document.getElementById('mediumBtn');
+    const hardBtn = document.getElementById('hardBtn');
+
+    // --- Difficulty Settings ---
+    const difficultySettings = {
+        EASY: {
+            ballSpeed: 4,
+            aiReaction: 0.03 // Slower AI
+        },
+        MEDIUM: {
+            ballSpeed: 6,
+            aiReaction: 0.05 // The old baseline
+        },
+        HARD: {
+            ballSpeed: 8, // Faster ball
+            aiReaction: 0.05 // Same AI as medium
+        }
+    };
+
+    let currentSettings = difficultySettings.MEDIUM;
 
     // --- Game State ---
     let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED'
@@ -38,6 +59,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Difficulty Button Listeners ---
+    easyBtn.addEventListener('click', () => setDifficulty('EASY'));
+    mediumBtn.addEventListener('click', () => setDifficulty('MEDIUM'));
+    hardBtn.addEventListener('click', () => setDifficulty('HARD'));
+
+    function setDifficulty(difficulty) {
+        currentSettings = difficultySettings[difficulty];
+        playerPaddle.score = 0;
+        aiPaddle.score = 0;
+        resetBall();
+        gameState = 'START';
+        gameButton.textContent = 'Start';
+    }
+
     // --- Game Objects ---
     const paddleWidth = 10;
     const paddleHeight = 100;
@@ -66,9 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
         x: canvas.width / 2,
         y: canvas.height / 2,
         radius: 7,
-        speed: 5,
-        velocityX: 5,
-        velocityY: 5,
+        speed: currentSettings.ballSpeed,
+        velocityX: currentSettings.ballSpeed,
+        velocityY: currentSettings.ballSpeed,
         color: 'white'
     };
 
@@ -76,10 +111,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function resetBall() {
         ball.x = canvas.width / 2;
         ball.y = canvas.height / 2;
-        ball.speed = 5;
+        ball.speed = currentSettings.ballSpeed;
         // Serve to the player who just scored
         ball.velocityX = -ball.velocityX;
-        ball.velocityY = 5; // Reset vertical velocity
+        ball.velocityY = currentSettings.ballSpeed; // Reset vertical velocity
     }
 
     // --- Update Function (Game Logic) ---
@@ -93,9 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Beatable AI Logic ---
         // The AI paddle tries to follow the ball's y position, but with a slight delay.
-        // The '0.04' multiplier makes its reaction slower and more realistic.
         const targetY = ball.y - aiPaddle.height / 2;
-        aiPaddle.y += (targetY - aiPaddle.y) * 0.04;
+        aiPaddle.y += (targetY - aiPaddle.y) * currentSettings.aiReaction;
 
         // Clamp the AI paddle's position to stay within the canvas
         if (aiPaddle.y < 0) {

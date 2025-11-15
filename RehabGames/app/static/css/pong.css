@@ -11,3 +11,38 @@ body {
 canvas {
     border: 2px solid white;
 }
+
+.game-controls {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+}
+
+.difficulty-controls {
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    background-color: transparent;
+    border: 2px solid white;
+    color: white;
+    padding: 10px 20px;
+    font-family: 'Press Start 2P', cursive;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+button:hover {
+    background-color: white;
+    color: black;
+}
+
+.active-difficulty {
+    background-color: #fff;
+    color: #000;
+    border-color: #fff;
+}
