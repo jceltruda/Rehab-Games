@@ -4,34 +4,104 @@
 /* --- CSS Variables --- */
 :root {
     --dark-bg: #0d0221;
+    --neon-pink: #ff00ff;
     --neon-cyan: #00e0e0;
-    --light-lavender: #e0aaff;
     --neon-purple: #9f20ff;
-    --light-text: #f0f0f0;
-
+    --light-purple: #e0aaff;
     --font-pixel: 'Press Start 2P', cursive;
     --font-modern: 'Montserrat', sans-serif;
-
-    --glow-shadow-cyan: 0 0 5px rgba(0, 224, 224, 0.7),
-                        0 0 10px rgba(0, 224, 224, 0.5),
-                        0 0 20px rgba(0, 224, 224, 0.3);
+    /* New variable for the subtle grid lines */
+    --grid-color: rgba(30, 227, 227, 0.07);
 }
 
-/* --- Base & Typography --- */
-body {
-    background-color: var(--dark-bg);
-    color: var(--light-text);
-    font-family: var(--font-modern);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    margin: 0;
-    text-align: center;
-    padding: 2rem;
+/* --- Keyframe Animations --- */
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 15px 5px rgba(0, 224, 224, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 25px 10px rgba(0, 224, 224, 0.4);
+    }
+    100% {
+        box-shadow: 0 0 15px 5px rgba(0, 224, 224, 0.2);
+    }
+}
+
+
+html {
     box-sizing: border-box;
 }
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-modern);
+    background-color: var(--dark-bg);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden; /* Hide scrollbars from pseudo-elements */
+    position: relative; /* For pseudo-element positioning */
+
+    /* Animated Background Grid */
+    background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-position: 0 0;
+    animation: scrollGrid 30s linear infinite;
+}
+
+@keyframes scrollGrid {
+    from { background-position: 0 0; }
+    to { background-position: 40px 40px; }
+}
+
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    padding: 3rem;
+    position: relative; /* For pseudo-elements */
+    border: 1px solid var(--neon-cyan);
+    
+    /* Pulsating Container Frame */
+    animation: pulse 4s ease-in-out infinite;
+}
+
+/* Corner Accents */
+.container::before,
+.container::after {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-color: var(--neon-purple);
+    border-style: solid;
+}
+
+.container::before {
+    top: -5px;
+    left: -5px;
+    border-width: 3px 0 0 3px;
+}
+
+.container::after {
+    bottom: -5px;
+    right: -5px;
+    border-width: 0 3px 3px 0;
+}
+
 
 h1 {
     font-family: var(--font-pixel);
