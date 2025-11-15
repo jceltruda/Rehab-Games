@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Game State ---
     let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED'
+    let visionControl = true; // Control with vision by default
 
     // --- Player Input Abstraction ---
     let playerInput = 'STOP'; // Possible states: 'UP', 'DOWN', 'STOP'
@@ -119,11 +120,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Update Function (Game Logic) ---
     function update() {
-        // Move Player Paddle based on input variable
-        if (playerInput === 'UP' && playerPaddle.y > 0) {
-            playerPaddle.y -= playerPaddle.speed;
-        } else if (playerInput === 'DOWN' && playerPaddle.y < canvas.height - playerPaddle.height) {
-            playerPaddle.y += playerPaddle.speed;
+        // Vision control is now handled in the gameLoop, so we only need keyboard fallback here
+        if (!visionControl) {
+            // Keyboard control
+            if (playerInput === 'UP' && playerPaddle.y > 0) {
+                playerPaddle.y -= playerPaddle.speed;
+            } else if (playerInput === 'DOWN' && playerPaddle.y < canvas.height - playerPaddle.height) {
+                playerPaddle.y += playerPaddle.speed;
+            }
         }
 
         // --- Beatable AI Logic ---
@@ -242,6 +246,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Game Loop ---
     function gameLoop() {
+        // Update paddle position based on vision regardless of game state
+        if (visionControl && window.handY !== null) {
+            const targetY = window.handY * canvas.height;
+            // Adjust for paddle center
+            const smoothedY = playerPaddle.y + (targetY - (playerPaddle.y + playerPaddle.height / 2)) * 0.5; 
+            
+            // Clamp to canvas boundaries
+            playerPaddle.y = Math.max(0, Math.min(canvas.height - playerPaddle.height, smoothedY));
+        }
+
         // Only update game logic if the game is in 'PLAYING' state
         if (gameState === 'PLAYING') {
             update();

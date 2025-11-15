@@ -72,7 +72,7 @@
         </div>
 
         <button type="button" id="startGameBtn" class="cta-button">
-            Launch Game
+            Start Game
         </button>
         
         </br>
@@ -89,20 +89,53 @@
             </div>
         </div>
 
+        <!-- Webcam preview under the game -->
+        <div id="webcamContainer" class="webcam-container" style="display: none;">
+            <label class="webcam-toggle">
+                <input type="checkbox" id="toggleWebcam" checked>
+                Show camera preview
+            </label>
+
+            <div class="webcam-video-wrapper">
+                <video id="webcam" autoplay playsinline></video>
+                <!-- overlay drawn by JS -->
+                <canvas id="webcamOverlay"></canvas>
+            </div>
+        </div>
+
         <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
     </div>
 
     <script src="{% static 'js/pong.js' %}"></script>
+
+    <!-- TF.js + MediaPipe Hands backend (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script> <!-- handPoseDetection -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script> <!-- MediaPipe runtime -->
+
+    <!-- Hand control logic -->
+    <script src="{% static 'js/pong_hand_control.js' %}"></script>
+
     <script>
         const startBtn = document.getElementById('startGameBtn');
         const container = document.getElementById('pongContainer');
+        const webcamContainer = document.getElementById('webcamContainer');
 
         startBtn.addEventListener('click', async () => {
             // Show game canvas and controls
             container.style.display = 'block';
+            webcamContainer.style.display = 'flex';
+
+            // Start webcam + hand tracking
+            if (window.initHandControl) {
+                await window.initHandControl();
+            }
 
             startBtn.disabled = true;
-            startBtn.textContent = "Game Launched";
+            startBtn.textContent = "Game Running...";
         });
     </script>
 </body>
