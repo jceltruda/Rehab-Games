@@ -1,10 +1,145 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Arkanoid Rehab</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rehab Games - Arkanoid</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        .arkanoid-container {
+            margin: 30px auto 0;
+            max-width: 800px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+            display: none; /* shown after Start Game */
+        }
+
+        .webcam-container {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .webcam-toggle {
+            font-size: 0.9rem;
+            color: #eee;
+        }
+
+        .webcam-video-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        #arkanoidCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background-color: #222;
+        }
+
+        #webcam {
+            max-width: 400px;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+            background: #000;
+            transform: scaleX(-1); 
+        }
+
+        #webcamOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;   /* scaled to match video */
+            height: 100%;
+            pointer-events: none;
+        }
+
+    </style>
 </head>
 <body>
-    <h1>Arkanoid: Left/Right Arm Movement</h1>
-    <button>START GAME</button>
+    <div class="home-container">
+        <h1>Arkanoid</h1>
+        <h2>Control the paddle using arm movement.</h2>
+
+        <div class="description-box">
+            <p>
+                This game helps build upper-body mobility  
+                using left or right arm movement to guide the paddle.
+            </p>
+            <p>
+                You will select difficulty and which arm you want to use  
+                once the game launches.
+            </p>
+            </br>
+        </div>
+
+        <button type="button" id="startGameBtn" class="cta-button">
+            Start Game
+        </button>
+        
+        </br>
+
+        <div class="arkanoid-container" id="arkanoidContainer">
+            <canvas id="arkanoidCanvas" width="800" height="600"></canvas>
+        </div>
+
+        <!-- Webcam preview under the game -->
+        <div id="webcamContainer" class="webcam-container">
+            <label class="webcam-toggle">
+                <input type="checkbox" id="toggleWebcam" checked>
+                Show camera preview
+            </label>
+
+            <div class="webcam-video-wrapper">
+                <video id="webcam" autoplay playsinline></video>
+                <!-- overlay drawn by JS -->
+                <canvas id="webcamOverlay"></canvas>
+            </div>
+        </div>
+
+        <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
+    </div>
+
+    <!-- Your Arkanoid game logic -->
+    <script src="{% static 'js/arkanoid.js' %}"></script>
+
+    <!-- TF.js + MediaPipe Hands backend (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script> <!-- handPoseDetection -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script> <!-- MediaPipe runtime -->
+
+    <!-- Hand control logic -->
+    <script src="{% static 'js/arkanoid_hand_control.js' %}"></script>
+
+    <script>
+        const startBtn = document.getElementById('startGameBtn');
+        const container = document.getElementById('arkanoidContainer');
+
+        startBtn.addEventListener('click', async () => {
+            // Show game canvas
+            container.style.display = 'block';
+
+            // Start webcam + hand tracking
+            if (window.initHandControl) {
+                await window.initHandControl();
+            }
+
+            // Start Arkanoid
+            if (window.startArkanoid) {
+                window.startArkanoid();
+            }
+
+            startBtn.disabled = true;
+            startBtn.textContent = "Game Running...";
+        });
+    </script>
 </body>
 </html>
