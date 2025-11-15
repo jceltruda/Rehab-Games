@@ -4,21 +4,17 @@
 /* --- CSS Variables --- */
 :root {
     --dark-bg: #0d0221;
-    --neon-pink: #ff00ff;
-    --neon-cyan: #00ffff;
+    --neon-cyan: #00e0e0;
+    --light-lavender: #e0aaff;
     --neon-purple: #9f20ff;
     --light-text: #f0f0f0;
 
     --font-pixel: 'Press Start 2P', cursive;
     --font-modern: 'Montserrat', sans-serif;
 
-    --glow-shadow-pink: 0 0 5px var(--neon-pink),
-                        0 0 10px var(--neon-pink),
-                        0 0 20px var(--neon-pink);
-
-    --glow-shadow-cyan: 0 0 5px var(--neon-cyan),
-                       0 0 10px var(--neon-cyan),
-                       0 0 20px var(--neon-cyan);
+    --glow-shadow-cyan: 0 0 5px rgba(0, 224, 224, 0.7),
+                        0 0 10px rgba(0, 224, 224, 0.5),
+                        0 0 20px rgba(0, 224, 224, 0.3);
 }
 
 /* --- Base & Typography --- */
@@ -40,22 +36,37 @@ body {
 h1 {
     font-family: var(--font-pixel);
     color: var(--neon-cyan);
-    text-shadow: var(--glow-shadow-cyan);
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    /* Replaced the blurry glow with a sharp purple outline and a subtle cyan glow */
+    text-shadow:
+        /* Sharp purple outline */
+        -2px -2px 0 var(--neon-purple),
+         2px -2px 0 var(--neon-purple),
+        -2px  2px 0 var(--neon-purple),
+         2px  2px 0 var(--neon-purple),
+        -2px  0   0 var(--neon-purple),
+         2px  0   0 var(--neon-purple),
+         0   -2px 0 var(--neon-purple),
+         0    2px 0 var(--neon-purple),
+        /* Subtle cyan glow */
+        0 0 15px var(--neon-cyan);
+    letter-spacing: 0.1em;
 }
 
 h2 {
     font-family: var(--font-modern);
-    color: var(--light-text);
+    color: var(--light-lavender);
     font-weight: 400;
-    font-size: 1.25rem;
+    font-size: 1.3rem;
+    line-height: 1.6; /* Improved line spacing */
     margin-top: 0;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem; /* Increased spacing */
+    text-shadow: 0 0 5px rgba(224, 170, 255, 0.5);
 }
 
 a {
-    color: var(--neon-pink);
+    color: var(--neon-cyan);
     text-decoration: none;
 }
 
@@ -70,19 +81,19 @@ a {
 .cta-button {
     font-family: var(--font-pixel);
     font-size: 1.5rem;
-    color: var(--neon-pink);
+    color: var(--neon-cyan);
     background-color: transparent;
-    border: 3px solid var(--neon-pink);
-    padding: 1rem 2rem;
+    border: 3px solid var(--neon-cyan);
+    padding: 1.2rem 2.5rem; /* Increased padding */
     cursor: pointer;
-    text-shadow: var(--glow-shadow-pink);
-    box-shadow: 0 0 10px var(--neon-pink) inset, 0 0 10px var(--neon-pink);
+    text-shadow: var(--glow-shadow-cyan);
+    box-shadow: 0 0 10px var(--neon-cyan) inset, 0 0 15px var(--neon-cyan);
     transition: all 0.3s ease;
 }
 
 .cta-button:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 20px var(--neon-pink) inset, 0 0 30px var(--neon-pink);
+    box-shadow: 0 0 20px var(--neon-cyan) inset, 0 0 30px var(--neon-cyan);
 }
 
 /* --- Game Selection Page --- */
@@ -111,7 +122,7 @@ a {
 .game-card h3 {
     font-family: var(--font-pixel);
     font-size: 1.5rem;
-    color: var(--neon-pink);
+    color: var(--neon-cyan);
     margin: 0 0 1rem 0;
 }
 
