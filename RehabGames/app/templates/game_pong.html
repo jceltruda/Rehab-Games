@@ -4,22 +4,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pong Rehab</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/pong.css' %}">
+    <title>Rehab Games - Pong</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        .pong-container {
+            margin: 30px auto 0;
+            max-width: 800px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+            display: none; /* shown after Start Game */
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background-color: #000;
+        }
+
+        .game-controls {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-controls button,
+        #gameControlButton {
+            font-family: var(--font-pixel);
+            font-size: 0.9rem;
+            color: var(--neon-cyan);
+            background-color: transparent;
+            border: 2px solid var(--neon-cyan);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-controls button:hover,
+        #gameControlButton:hover {
+            box-shadow: 0 0 10px var(--neon-cyan) inset, 0 0 15px var(--neon-cyan);
+        }
+        
+        .active-difficulty {
+            background-color: var(--neon-cyan);
+            color: var(--dark-bg);
+        }
+
+    </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
-    <div class="game-controls">
-        <button id="gameControlButton">Start</button>
-        <div class="difficulty-controls">
-            <button id="easyBtn">Easy</button>
-            <button id="mediumBtn">Medium</button>
-            <button id="hardBtn">Hard</button>
+    <div class="home-container">
+        <h1>Pong</h1>
+        <h2>Control the paddle with your arm.</h2>
+
+        <div class="description-box">
+            <p>
+                A classic arcade game to help with arm mobility.
+            </p>
+            <p>
+                You will select a difficulty before starting the game.
+            </p>
+            </br>
         </div>
+
+        <button type="button" id="startGameBtn" class="cta-button">
+            Launch Game
+        </button>
+        
+        </br>
+
+        <div class="pong-container" id="pongContainer">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div class="game-controls">
+                <button id="gameControlButton">Start</button>
+                <div class="difficulty-controls">
+                    <button id="easyBtn">Easy</button>
+                    <button id="mediumBtn">Medium</button>
+                    <button id="hardBtn">Hard</button>
+                </div>
+            </div>
+        </div>
+
+        <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
     </div>
+
     <script src="{% static 'js/pong.js' %}"></script>
+    <script>
+        const startBtn = document.getElementById('startGameBtn');
+        const container = document.getElementById('pongContainer');
+
+        startBtn.addEventListener('click', async () => {
+            // Show game canvas and controls
+            container.style.display = 'block';
+
+            startBtn.disabled = true;
+            startBtn.textContent = "Game Launched";
+        });
+    </script>
 </body>
 </html>
