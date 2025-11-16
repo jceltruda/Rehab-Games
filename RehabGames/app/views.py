@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-# settings.BASE_DIR = .../Rehab-Games/RehabGames
 BASE_DIR = Path(settings.BASE_DIR)
 
 # Our game directory is the parent of the Django project folder:

@@ -135,14 +135,13 @@
         const gameOverScoreEl = document.getElementById('game-over-score');
 
         // --- Game Constants (from Python file) ---
-        // Tuned to match the 'drive_background.png'
-        const ROAD_X_START = 88;
-        const ROAD_X_END = 312;
+        // Tuned to match the 'drive_background.png' 
+        const ROAD_X_START = 120;
+        const ROAD_X_END = 260;
         const ROAD_WIDTH = ROAD_X_END - ROAD_X_START; // 224
         const NUM_LANES = 3;
         const LANE_WIDTH = ROAD_WIDTH / NUM_LANES; // ~74.6
 
-        // Tuned sizes
         const PLAYER_WIDTH = 30;
         const PLAYER_HEIGHT = 60;
         const OBSTACLE_WIDTH = 30;
@@ -520,9 +519,9 @@
             // IMPORTANT: Make sure these paths are correct for your Django setup!
             // You may need to use Django's {% static '...' %} tag.
             // ************
-            assets.player.src = "{% static 'flappyBird/driver_car.png' %}";
-            assets.obstacle.src = "{% static 'flappyBird/obstacle_car.png' %}";
-            assets.background.src = "{% static 'flappyBird/road_background.png' %}";
+            assets.player.src = "{% static 'driver_car.png' %}";
+            assets.obstacle.src = "{% static 'obstacle_car.png' %}";
+            assets.background.src = "{% static 'road_background.png' %}";
             
             // Start game loop
             lastTime = performance.now();
