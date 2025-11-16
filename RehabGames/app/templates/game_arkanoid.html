@@ -27,6 +27,8 @@
         .webcam-toggle {
             font-size: 0.9rem;
             color: #eee;
+            margin-top: 1rem;
+            margin-bottom: 8px; 
         }
 
         .webcam-video-wrapper {
@@ -88,13 +90,13 @@
             <canvas id="arkanoidCanvas" width="800" height="600"></canvas>
         </div>
 
+        <label class="webcam-toggle">
+            <input type="checkbox" id="toggleWebcam" checked>
+            Show camera preview
+        </label>
+
         <!-- Webcam preview under the game -->
         <div id="webcamContainer" class="webcam-container">
-            <label class="webcam-toggle">
-                <input type="checkbox" id="toggleWebcam" checked>
-                Show camera preview
-            </label>
-
             <div class="webcam-video-wrapper">
                 <video id="webcam" autoplay playsinline></video>
                 <!-- overlay drawn by JS -->
