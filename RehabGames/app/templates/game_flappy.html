@@ -40,12 +40,6 @@
                     <p>You will select a difficulty before starting the game.</p>
                 </div>
 
-                <div id="difficulty-buttons">
-                    <button class="difficulty-btn" data-difficulty="Easy">Easy</button>
-                    <button class="difficulty-btn" data-difficulty="Medium">Medium</button>
-                    <button class="difficulty-btn" data-difficulty="Hard">Hard</button>
-                </div>
-
                 <button style="margin-top: 15px;" type="button" id="startGameBtn" class="cta-button">
                     Start Game
                 </button>
@@ -53,6 +47,14 @@
 
             <div class="game" style="display: none; position: relative;">
                 <canvas id="gameCanvas" width="400" height="600"></canvas>
+                <div class="game-controls">
+                    <button id="startGameBtn2">Start</button>
+                    <div class="difficulty-controls">
+                        <button id="easyBtn">Easy</button>
+                        <button id="mediumBtn">Medium</button>
+                        <button id="hardBtn">Hard</button>
+                    </div>
+                </div>
                 <div id="ui-layer">
                     <div id="score">0</div>
                     <div id="game-over-container" class="message-box">
@@ -72,13 +74,15 @@
             </label>
             <div id="webcamContainer">
                 <div id="debugPanel">
-                    <canvas id="debugVideoCanvas" width="400" height="300"></canvas>
+                    <canvas style="border-radius: 10px" id="debugVideoCanvas" width="400" height="300"></canvas>
                 </div>
             </div>
         </div>
 
         <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
     </div>
+    
+    
 
 <script>
     // ----- Setup -----
@@ -98,6 +102,8 @@
     const gameOverScoreEl = document.getElementById('game-over-score');
     const countdownOverlay = document.getElementById('countdownOverlay');
     const startGameBtn = document.getElementById('startGameBtn');
+    const startGameBtn2 = document.getElementById('startGameBtn2');
+
 
     const BIRD_WIDTH = 95;
     const BIRD_HEIGHT = 95;
@@ -337,9 +343,6 @@
     }
 
     function gameLoop(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        drawBackground();
-
         switch(gameState){
             case 'countdown':
                 drawBird(); drawPipes(); break;
@@ -399,7 +402,7 @@
         assets.bird.src="{% static 'bird.png' %}";
         assets.pipeBottom.src="{% static 'pipe.png' %}";
 
-        startGameBtn.addEventListener('click', startGame);
+        startGameBtn2.addEventListener('click', startGame);
         gameLoop();
     }
 
