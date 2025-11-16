@@ -10,8 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+
     <style>
-        /* Ensure score is visible above canvas */
         #score {
             position: absolute;
             top: 10px;
@@ -25,6 +25,53 @@
             background-color: #4CAF50;
             color: white;
         }
+
+        /* NEW LAYOUT CHANGES */
+        .main-row {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+        }
+
+        .left-column {
+            flex: 1;
+        }
+
+        .right-column {
+            width: 420px;
+            margin-left: 25px;
+        }
+        .difficulty-controls button,
+        #startGameBtn2 {
+            font-family: var(--font-pixel);
+            font-size: 0.9rem;
+            color: var(--neon-cyan);
+            background-color: transparent;
+            border: 2px solid var(--neon-cyan);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-controls button:hover,
+        #startGameBtn2:hover {
+            box-shadow: 0 0 10px var(--neon-cyan) inset, 0 0 15px var(--neon-cyan);
+        }
+        .game-controls {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .difficulty-controls {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+        }
+
     </style>
 </head>
 
@@ -32,21 +79,43 @@
     <h1>Flappy Bird Rehab</h1>
 
     <div class="main-row">
-        <div class="game-container">
-            <div id="menu-container" class="message-box">
-                <h2>Control the flaps with your arms</h2>
-                <div class="description-box">
-                    <p>A classic arcade game to help with arm mobility.</p>
-                    <p>You will select a difficulty before starting the game.</p>
-                </div>
 
-                <button style="margin-top: 15px;" type="button" id="startGameBtn" class="cta-button">
-                    Start Game
-                </button>
+        <!-- LEFT SECTION (Menu + Camera) -->
+        <div class="left-column" style="margin-left: 30vw">
+            <div class="game-container">
+                <div id="menu-container" class="message-box">
+                    <h2>Control the flaps with your arms</h2>
+                    <div class="description-box">
+                        <p>A classic arcade game to help with arm mobility.</p>
+                        <p>You will select a difficulty before starting the game.</p>
+                    </div>
+
+                    <button style="margin-top: 15px;" type="button" id="startGameBtn" class="cta-button">
+                        Start Game
+                    </button>
+                </div>
             </div>
 
-            <div class="game" style="display: none; position: relative;">
+            <div class="webcam-section">
+                <label style="margin-bottom: 20px" class="webcam-toggle">
+                    <input type="checkbox" id="toggleWebcam" checked>
+                    Show camera preview
+                </label>
+                <div id="webcamContainer">
+                    <div id="debugPanel">
+                        <canvas style="border-radius: 10px" id="debugVideoCanvas" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
+        </div>
+
+        <!-- RIGHT SECTION (Actual Game Canvas) -->
+        <div class="right-column">
+            <div class="game" style="display:none; position:relative;">
                 <canvas id="gameCanvas" width="400" height="600"></canvas>
+
                 <div class="game-controls">
                     <button id="startGameBtn2">Start</button>
                     <div class="difficulty-controls">
@@ -55,34 +124,23 @@
                         <button id="hardBtn">Hard</button>
                     </div>
                 </div>
+
                 <div id="ui-layer">
                     <div id="score">0</div>
-                    <div id="game-over-container" class="message-box">
+                    <div id="game-over-container" class="message-box" style="display:none;">
                         <h2 id="game-over-title">Game Over</h2>
                         <p id="game-over-score">Score: 0</p>
                         <p class="instructions">Press ENTER to return to menu</p>
                     </div>
                 </div>
-                <div id="countdownOverlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:64px; color:white;">3</div>
-            </div>  
-        </div>
 
-        <div class="webcam-section">
-            <label style="margin-bottom: 20px" class="webcam-toggle">
-                <input type="checkbox" id="toggleWebcam" checked>
-                Show camera preview
-            </label>
-            <div id="webcamContainer">
-                <div id="debugPanel">
-                    <canvas style="border-radius: 10px" id="debugVideoCanvas" width="400" height="300"></canvas>
-                </div>
+                <div id="countdownOverlay"
+                    style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%);
+                           font-size:64px; color:white; display:none;">3</div>
             </div>
         </div>
 
-        <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
     </div>
-    
-    
 
 <script>
     // ----- Setup -----
@@ -101,13 +159,13 @@
     const gameOverContainerEl = document.getElementById('game-over-container');
     const gameOverScoreEl = document.getElementById('game-over-score');
     const countdownOverlay = document.getElementById('countdownOverlay');
-    const startGameBtn = document.getElementById('startGameBtn');
-    const startGameBtn2 = document.getElementById('startGameBtn2');
 
+    const startGameBtn = document.getElementById('startGameBtn'); // First button
+    const startGameBtn2 = document.getElementById('startGameBtn2'); // Second button
 
     const BIRD_WIDTH = 95;
     const BIRD_HEIGHT = 95;
-    const FAST_FALL_STRENGTH = 1.5; 
+    const FAST_FALL_STRENGTH = 1.5;
     const PIPE_WIDTH = 80;
     const HITBOX_X_SHRINK = 40;
     const HITBOX_Y_SHRINK = 54;
@@ -137,13 +195,14 @@
         pipeBottom: new Image(),
         pipeTop: null
     };
-    let pipeImgHeight = 500; 
+
+    let pipeImgHeight = 500;
     let assetsLoaded = 0;
     const totalAssets = 2;
 
     const controls = { up:false, down:false, left:false, right:false, enter:false };
 
-    // ----- Keyboard -----
+    // Keyboard
     function setupKeyboardControls() {
         window.addEventListener('keydown', e => {
             if(e.key==='ArrowUp') controls.up=true;
@@ -173,7 +232,8 @@
         const bottomCanvas = document.createElement('canvas');
         bottomCanvas.width = PIPE_WIDTH;
         bottomCanvas.height = pipeImgHeight;
-        bottomCanvas.getContext('2d').drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
+        bottomCanvas.getContext('2d')
+            .drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
         assets.pipeBottom = bottomCanvas;
 
         const topCanvas = document.createElement('canvas');
@@ -186,26 +246,23 @@
         assets.pipeTop = topCanvas;
     }
 
+    // SUBMIT SCORE
     async function submitScoreToServer(score) {
         try {
             const resp = await fetch("/submit_score/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    player: "Guest",           // or wire a real name later
-                    game: "shoulder-bird",            // must match your Django GAME_CHOICES
+                    player: "Guest",
+                    game: "shoulder-bird",
                     score: score,
-                    difficulty: selectedDifficulty, // "Easy" / "Medium" / "Hard"
+                    difficulty: selectedDifficulty,
                 }),
             });
 
-            if (!resp.ok) {
-                console.error("Flappy score submit failed:", resp.status, await resp.text());
-            } else {
-                console.log("Flappy score submitted!");
-            }
+            if (!resp.ok) console.error("Score submit failed", resp.status);
         } catch (err) {
-            console.error("Error submitting flappy score:", err);
+            console.error(err);
         }
     }
 
@@ -214,13 +271,29 @@
             scoreSubmitted = true;
             submitScoreToServer(score);
         }
-        gameState = 'gameOver';
+        gameState = "gameOver";
         gameOverScoreEl.innerText = `Score: ${score}`;
-        gameOverContainerEl.style.display = 'block';
+        gameOverContainerEl.style.display = "block";
     }
 
+    // ---- NEW: FIRST BUTTON BEHAVIOR ----
+    startGameBtn.addEventListener("click", () => {
+        startGameBtn.innerText = "Game Running ...";
+
+        // Show game on right side
+        document.querySelector(".game").style.display = "block";
+        document.querySelector(".left-column").style = "";
+        bird = { x: canvas.width/4, y: canvas.height/2, width: BIRD_WIDTH, height: BIRD_HEIGHT, velocityY:0, velocityX:0 };
+        drawBird();
+        // DO NOT start the game here
+    });
+
+    // ---- SECOND BUTTON STARTS GAME ----
+    startGameBtn2.addEventListener("click", () => startGame());
+
+    // ACTUAL GAME START FUNCTION
     function startGame() {
-        if(assetsLoaded < totalAssets) { alert("Assets still loading!"); return; }
+        if (assetsLoaded < totalAssets) { alert("Assets still loading!"); return; }
 
         const diff = selectedDifficulty;
         gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
@@ -232,32 +305,31 @@
 
         bird = { x: canvas.width/4, y: canvas.height/2, width: BIRD_WIDTH, height: BIRD_HEIGHT, velocityY:0, velocityX:0 };
         pipes = [];
-        spawnPipe(); // Spawn first pipe immediately
+        spawnPipe();
         score = 0;
         frame = 0;
         scoreEl.innerText = score;
         scoreSubmitted = false;
 
-        gameState = 'countdown';
-        menuContainerEl.style.display='none';
-        gameOverContainerEl.style.display='none';
-        document.querySelector('.game').style.display='block';
-        scoreEl.style.display='block';
+        gameState = "countdown";
+        gameOverContainerEl.style.display = "none";
+        scoreEl.style.display = "block";
 
-        window.visionEnabled=false;
-        countdownOverlay.style.display='block';
+        window.visionEnabled = false;
+
+        countdownOverlay.style.display = "block";
         countdownOverlay.innerText = "3";
         let countdown = 3;
-        const countdownTimer = setInterval(()=>{
+        const timer = setInterval(() => {
             countdown--;
-            if(countdown>0) countdownOverlay.innerText=String(countdown);
+            if (countdown > 0) countdownOverlay.innerText = countdown;
             else {
-                clearInterval(countdownTimer);
-                countdownOverlay.style.display='none';
-                window.visionEnabled=true;
-                gameState='playing';
+                clearInterval(timer);
+                countdownOverlay.style.display = "none";
+                window.visionEnabled = true;
+                gameState = "playing";
             }
-        },1000);
+        }, 1000);
     }
 
     function spawnPipe() {
@@ -265,144 +337,193 @@
         pipes.push({
             x: canvas.width,
             width: PIPE_WIDTH,
-            gapTop: gapTop,
+            gapTop,
             gapHeight: gamePipeGap,
             passed:false
         });
     }
 
-    function getHitbox(bird) {
-        const dx = HITBOX_X_SHRINK/2;
-        const dy = HITBOX_Y_SHRINK/2;
-        return { x: bird.x+dx, y:bird.y+dy, width: bird.width-HITBOX_X_SHRINK, height: bird.height-HITBOX_Y_SHRINK };
+    function getHitbox(b) {
+        return {
+            x: b.x + HITBOX_X_SHRINK/2,
+            y: b.y + HITBOX_Y_SHRINK/2,
+            width: b.width - HITBOX_X_SHRINK,
+            height: b.height - HITBOX_Y_SHRINK
+        };
     }
 
     function updateBird() {
         bird.velocityY += gameGravity;
-        if(controls.up) { bird.velocityY=gameFlapStrength; controls.up=false; }
-        if(controls.down) bird.velocityY+=FAST_FALL_STRENGTH;
-        bird.velocityX=0;
-        if(controls.left) bird.velocityX=-gameHorizontalSpeed;
-        if(controls.right) bird.velocityX=gameHorizontalSpeed;
 
-        bird.y+=bird.velocityY;
-        bird.x+=bird.velocityX;
+        if(controls.up){ bird.velocityY = gameFlapStrength; controls.up=false; }
+        if(controls.down) bird.velocityY += FAST_FALL_STRENGTH;
 
-        if(bird.x<0) bird.x=0;
-        if(bird.x+bird.width>canvas.width) bird.x=canvas.width-bird.width;
+        bird.velocityX = 0;
+        if(controls.left) bird.velocityX = -gameHorizontalSpeed;
+        if(controls.right) bird.velocityX = gameHorizontalSpeed;
 
-        const hitbox = getHitbox(bird);
-        if(hitbox.y + hitbox.height > canvas.height || hitbox.y<0) setGameOver();
+        bird.y += bird.velocityY;
+        bird.x += bird.velocityX;
+
+        if(bird.x < 0) bird.x = 0;
+        if(bird.x + bird.width > canvas.width)
+            bird.x = canvas.width - bird.width;
+
+        const hit = getHitbox(bird);
+        if(hit.y + hit.height > canvas.height || hit.y < 0) setGameOver();
     }
 
     function updatePipes() {
-        if(frame % gamePipeSpacing ===0) spawnPipe();
+        if(frame % gamePipeSpacing === 0) spawnPipe();
 
-        for(let i=pipes.length-1;i>=0;i--){
-            const pipe=pipes[i];
-            pipe.x-=gamePipeSpeed;
+        for(let i = pipes.length-1; i >= 0; i--){
+            const p = pipes[i];
+            p.x -= gamePipeSpeed;
 
-            if(pipe.x+pipe.width<0){ pipes.splice(i,1); continue; }
+            if(p.x + p.width < 0){
+                pipes.splice(i,1);
+                continue;
+            }
 
-            if(!pipe.passed && pipe.x<bird.x){ pipe.passed=true; score++; scoreEl.innerText=score; }
+            if(!p.passed && p.x < bird.x){
+                p.passed = true;
+                score++;
+                scoreEl.innerText = score;
+            }
 
-            if(checkCollision(bird,pipe)) setGameOver();
+            if(checkCollision(bird, p)) setGameOver();
         }
     }
 
-    function checkCollision(bird,pipe){
-        const hitbox=getHitbox(bird);
-        if(hitbox.x < pipe.x + pipe.width && hitbox.x + hitbox.width > pipe.x){
-            if(hitbox.y < pipe.gapTop) return true;
-            if(hitbox.y + hitbox.height > pipe.gapTop + pipe.gapHeight) return true;
+    function checkCollision(b, p){
+        const hit = getHitbox(b);
+        if(hit.x < p.x + p.width && hit.x + hit.width > p.x){
+            if(hit.y < p.gapTop) return true;
+            if(hit.y + hit.height > p.gapTop + p.gapHeight) return true;
         }
         return false;
     }
 
     function drawBird(){
-        if(assets.bird.complete) ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
-        else { ctx.fillStyle='yellow'; ctx.fillRect(bird.x,bird.y,bird.width,bird.height); }
+        if (assets.bird.complete)
+            ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
+        else {
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+        }
     }
 
     function drawPipes(){
-        pipes.forEach(pipe=>{
-            if(assets.pipeTop){
-                ctx.drawImage(assets.pipeTop, pipe.x, pipe.gapTop - pipeImgHeight, pipe.width, pipeImgHeight);
-                ctx.drawImage(assets.pipeBottom, pipe.x, pipe.gapTop + pipe.gapHeight, pipe.width, pipeImgHeight);
-            }else{
-                ctx.fillStyle='#008000';
-                ctx.fillRect(pipe.x,0,pipe.width,pipe.gapTop);
-                ctx.fillRect(pipe.x,pipe.gapTop+pipe.gapHeight,pipe.width,canvas.height-(pipe.gapTop+pipe.gapHeight));
-            }
+        pipes.forEach(p => {
+            ctx.drawImage(assets.pipeTop, p.x, p.gapTop - pipeImgHeight, p.width, pipeImgHeight);
+            ctx.drawImage(assets.pipeBottom, p.x, p.gapTop + p.gapHeight, p.width, pipeImgHeight);
         });
     }
 
     function drawBackground(){
-        ctx.fillStyle='#70c5ce';
+        ctx.fillStyle = "#70c5ce";
         ctx.fillRect(0,0,canvas.width,canvas.height);
     }
 
     function gameLoop(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        drawBackground();
+
         switch(gameState){
-            case 'countdown':
-                drawBird(); drawPipes(); break;
-            case 'playing':
-                frame++; updateBird(); updatePipes(); drawPipes(); drawBird(); break;
-            case 'gameOver':
-                drawPipes(); drawBird();
+            case "countdown":
+                drawBird();
+                drawPipes();
+                break;
+
+            case "playing":
+                frame++;
+                updateBird();
+                updatePipes();
+                drawPipes();
+                drawBird();
+                break;
+
+            case "gameOver":
+                drawPipes();
+                drawBird();
                 if(controls.enter){
-                    document.querySelector('.game').style.display='none';
-                    menuContainerEl.style.display='block';
-                    gameState='menu';
-                    controls.enter=false;
+                    document.querySelector(".game").style.display = "none";
+                    startGameBtn.innerText = "Start Game"; // Reset label
+                    menuContainerEl.style.display = "block";
+                    gameState = "menu";
+                    controls.enter = false;
                 }
                 break;
         }
+
         requestAnimationFrame(gameLoop);
     }
 
-    // ----- Vision Setup (simplified) -----
+    // ----- Vision Setup -----
     (function setupVision(){
         const L_WR=15,R_WR=16,L_SH=11,R_SH=12;
         window.visionEnabled=false;
+
         const debugCanvas=document.getElementById("debugVideoCanvas");
         const debugCtx=debugCanvas.getContext("2d");
-        const visionVideo=document.createElement("video");
-        visionVideo.style.display="none"; visionVideo.autoplay=true; visionVideo.playsInline=true;
-        document.body.appendChild(visionVideo);
 
-        const poseDetector=new Pose({ locateFile:(file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}` });
-        poseDetector.setOptions({ modelComplexity:1, smoothLandmarks:true, enableSegmentation:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
-        poseDetector.onResults(onPoseResults);
-        new Camera(visionVideo,{ onFrame: async()=>await poseDetector.send({image:visionVideo}), width:640,height:480 }).start();
+        const vid=document.createElement("video");
+        vid.style.display="none"; vid.autoplay=true; vid.playsInline=true;
+        document.body.appendChild(vid);
 
-        function onPoseResults(results){
+        const pose=new Pose({ locateFile:f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}` });
+        pose.setOptions({
+            modelComplexity:1,
+            smoothLandmarks:true,
+            enableSegmentation:false,
+            minDetectionConfidence:0.5,
+            minTrackingConfidence:0.5
+        });
+
+        pose.onResults(results => {
             if(!results.image) return;
-            debugCtx.clearRect(0,0,debugCanvas.width,debugCanvas.height);
-            debugCtx.save(); debugCtx.scale(-1,1); debugCtx.drawImage(results.image,-debugCanvas.width,0,debugCanvas.width,debugCanvas.height); debugCtx.restore();
-            if(!results.poseLandmarks?.length) return;
-            const lm=results.poseLandmarks;
-            function drawPoint(p,color){ const x=p.x*debugCanvas.width; const y=p.y*debugCanvas.height; debugCtx.beginPath(); debugCtx.arc(x,y,5,0,2*Math.PI); debugCtx.fillStyle=color; debugCtx.fill(); }
-            drawPoint(lm[L_WR],'red'); drawPoint(lm[R_WR],'red');
 
-            const leftWristY=lm[L_WR].y,rightWristY=lm[R_WR].y;
-            const leftShoulderY=lm[L_SH].y,rightShoulderY=lm[R_SH].y;
-            const THRESHOLD=-0.2;
-            const bothUp=(leftWristY<leftShoulderY-THRESHOLD)&&(rightWristY<rightShoulderY-THRESHOLD);
-            if(bothUp && window.visionEnabled && gameState==='playing') controls.up=true;
-        }
+            debugCtx.clearRect(0,0,debugCanvas.width,debugCanvas.height);
+            debugCtx.save();
+            debugCtx.scale(-1,1);
+            debugCtx.drawImage(results.image, -debugCanvas.width,0,debugCanvas.width,debugCanvas.height);
+            debugCtx.restore();
+
+            if(!results.poseLandmarks?.length) return;
+
+            const lm = results.poseLandmarks;
+
+            const leftWristY = lm[L_WR].y;
+            const rightWristY = lm[R_WR].y;
+            const leftShoulderY = lm[L_SH].y;
+            const rightShoulderY = lm[R_SH].y;
+
+            const THRESHOLD = -0.2;
+            const bothUp =
+                (leftWristY < leftShoulderY - THRESHOLD) &&
+                (rightWristY < rightShoulderY - THRESHOLD);
+
+            if(bothUp && window.visionEnabled && gameState==="playing")
+                controls.up = true;
+        });
+
+        new Camera(vid, {
+            onFrame: async()=>await pose.send({image:vid}),
+            width:640,
+            height:480
+        }).start();
     })();
 
     // ----- Initialization -----
     function init(){
         setupKeyboardControls();
 
-        assets.bird.onload=onAssetLoad;
-        assets.pipeBottom.onload=onAssetLoad;
-        assets.bird.src="{% static 'bird.png' %}";
-        assets.pipeBottom.src="{% static 'pipe.png' %}";
+        assets.bird.onload = onAssetLoad;
+        assets.pipeBottom.onload = onAssetLoad;
 
-        startGameBtn2.addEventListener('click', startGame);
+        assets.bird.src = "{% static 'bird.png' %}";
+        assets.pipeBottom.src = "{% static 'pipe.png' %}";
+
         gameLoop();
     }
 
