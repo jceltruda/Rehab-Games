@@ -57,14 +57,14 @@ const keys = {
 
 // ---- Game states ----
 const STATE = {
-    HAND_SELECT: "hand_select",
-    DIFF_SELECT: "diff_select",
+    START: "start",
     PLAYING: "playing",
+    PAUSED: "paused",
     GAME_OVER: "game_over",
 };
 
 let canvas, ctx;
-let gameState = STATE.HAND_SELECT;
+let gameState = STATE.START;
 
 let handLabel = "Right hand";
 let difficultyLabel = "Normal";
@@ -74,6 +74,9 @@ let paddle, ball, bricks;
 let lives = 3;
 let score = 0;
 let win = false;
+
+// Button references
+let gameButton, easyBtn, normalBtn, hardBtn, leftHandBtn, rightHandBtn;
 
 // ---- Paddle class ----
 class Paddle {
@@ -256,28 +259,6 @@ function drawText(ctx, text, size, color, cx, cy) {
 window.addEventListener("keydown", (e) => {
     const key = e.key;
 
-    if (gameState === STATE.HAND_SELECT) {
-        if (key === "r" || key === "R") {
-            handLabel = "Right hand";
-            gameState = STATE.DIFF_SELECT;
-        } else if (key === "l" || key === "L") {
-            handLabel = "Left hand";
-            gameState = STATE.DIFF_SELECT;
-        }
-        return;
-    }
-
-    if (gameState === STATE.DIFF_SELECT) {
-        if (key === "1" || key === "2" || key === "3") {
-            const diff = DIFFICULTIES[key];
-            difficultyLabel = diff.label;
-            difficultyMult = diff.mult;
-            startNewGame();
-            gameState = STATE.PLAYING;
-        }
-        return;
-    }
-
     if (gameState === STATE.PLAYING) {
         if (key === "ArrowLeft" || key === "a" || key === "A") keys.left = true;
         if (key === "ArrowRight" || key === "d" || key === "D") keys.right = true;
@@ -286,8 +267,7 @@ window.addEventListener("keydown", (e) => {
 
     if (gameState === STATE.GAME_OVER) {
         if (key === "r" || key === "R") {
-            startNewGame();
-            gameState = STATE.PLAYING;
+            resetGame();
         }
     }
 });
@@ -307,10 +287,30 @@ function startNewGame() {
     lives = 3;
     score = 0;
     win = false;
+    gameState = STATE.PLAYING;
+}
+
+function resetGame() {
+    startNewGame();
+    gameState = STATE.START;
+    if (gameButton) {
+        gameButton.textContent = 'Start';
+    }
 }
 
 // ---- Main loop ----
 function update() {
+    // Always update paddle position based on vision regardless of game state
+    if (typeof window.handX === "number") {
+        // Apply left/right hand mirroring so both feel natural
+        let normX = window.handX;  // 0..1
+        if (handLabel === "Left hand") {
+            normX = 1 - normX;
+        }
+        const targetCenterX = normX * WIDTH;
+        paddle.x = targetCenterX - paddle.w / 2;
+    }
+
     if (gameState === STATE.PLAYING) {
         paddle.update();
 
@@ -354,18 +354,27 @@ function draw() {
     ctx.fillStyle = COLORS.GREY;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    if (gameState === STATE.HAND_SELECT) {
-        drawText(ctx, "Select Control Hand", 40, COLORS.WHITE, WIDTH / 2, HEIGHT / 2 - 60);
-        drawText(ctx, "Press R for RIGHT hand", 30, COLORS.BLUE, WIDTH / 2, HEIGHT / 2);
-        drawText(ctx, "Press L for LEFT hand", 30, COLORS.GREEN, WIDTH / 2, HEIGHT / 2 + 40);
+    if (gameState === STATE.START) {
+        drawText(ctx, "Press Start", 50, COLORS.WHITE, WIDTH / 2, HEIGHT / 2);
         return;
     }
 
-    if (gameState === STATE.DIFF_SELECT) {
-        drawText(ctx, "Select Difficulty", 40, COLORS.WHITE, WIDTH / 2, HEIGHT / 2 - 80);
-        drawText(ctx, "1 - Easy (slower)", 28, COLORS.GREEN, WIDTH / 2, HEIGHT / 2 - 20);
-        drawText(ctx, "2 - Normal", 28, COLORS.YELLOW, WIDTH / 2, HEIGHT / 2 + 20);
-        drawText(ctx, "3 - Hard (faster)", 28, COLORS.RED, WIDTH / 2, HEIGHT / 2 + 60);
+    if (gameState === STATE.PAUSED) {
+        // Draw game objects in background
+        for (const b of bricks) {
+            b.draw(ctx);
+        }
+        paddle.draw(ctx);
+        ball.draw(ctx);
+        
+        // HUD
+        drawText(ctx, `Score: ${score}`, 22, COLORS.WHITE, 80, 20);
+        drawText(ctx, `Lives: ${lives}`, 22, COLORS.WHITE, WIDTH - 80, 20);
+        drawText(ctx, `Difficulty: ${difficultyLabel}`, 22, COLORS.WHITE, WIDTH / 2, 20);
+        drawText(ctx, `Hand: ${handLabel}`, 20, COLORS.WHITE, WIDTH / 2, 50);
+        
+        // Paused message
+        drawText(ctx, "PAUSED", 50, COLORS.WHITE, WIDTH / 2, HEIGHT / 2);
         return;
     }
 
@@ -409,10 +418,92 @@ function draw() {
     }
 }
 
+// ---- Button Setup ----
+function setupButtons() {
+    gameButton = document.getElementById('gameControlButton');
+    easyBtn = document.getElementById('easyBtn');
+    normalBtn = document.getElementById('normalBtn');
+    hardBtn = document.getElementById('hardBtn');
+    leftHandBtn = document.getElementById('leftHandBtn');
+    rightHandBtn = document.getElementById('rightHandBtn');
+
+    // Set default active buttons
+    normalBtn.classList.add('active-difficulty');
+    rightHandBtn.classList.add('active-handedness');
+
+    // Game control button
+    gameButton.addEventListener('click', () => {
+        if (gameState === STATE.START) {
+            startNewGame();
+            gameButton.textContent = 'Pause';
+        } else if (gameState === STATE.PLAYING) {
+            gameState = STATE.PAUSED;
+            gameButton.textContent = 'Resume';
+        } else if (gameState === STATE.PAUSED) {
+            gameState = STATE.PLAYING;
+            gameButton.textContent = 'Pause';
+        }
+    });
+
+    // Difficulty buttons
+    easyBtn.addEventListener('click', () => setDifficulty('Easy', 0.75));
+    normalBtn.addEventListener('click', () => setDifficulty('Normal', 1.0));
+    hardBtn.addEventListener('click', () => setDifficulty('Hard', 1.3));
+
+    // Handedness buttons
+    leftHandBtn.addEventListener('click', () => setHandedness('Left hand'));
+    rightHandBtn.addEventListener('click', () => setHandedness('Right hand'));
+}
+
+function setDifficulty(label, mult) {
+    // Remove active class from all difficulty buttons
+    easyBtn.classList.remove('active-difficulty');
+    normalBtn.classList.remove('active-difficulty');
+    hardBtn.classList.remove('active-difficulty');
+
+    // Add active class to selected button
+    if (label === 'Easy') {
+        easyBtn.classList.add('active-difficulty');
+    } else if (label === 'Normal') {
+        normalBtn.classList.add('active-difficulty');
+    } else if (label === 'Hard') {
+        hardBtn.classList.add('active-difficulty');
+    }
+
+    difficultyLabel = label;
+    difficultyMult = mult;
+    
+    // Reset game with new difficulty
+    score = 0;
+    lives = 3;
+    if (paddle && ball) {
+        paddle = new Paddle(difficultyMult);
+        ball = new Ball(difficultyMult);
+        bricks = createBricks();
+    }
+    gameState = STATE.START;
+    gameButton.textContent = 'Start';
+}
+
+function setHandedness(hand) {
+    // Remove active class from all handedness buttons
+    leftHandBtn.classList.remove('active-handedness');
+    rightHandBtn.classList.remove('active-handedness');
+
+    // Add active class to selected button
+    if (hand === 'Left hand') {
+        leftHandBtn.classList.add('active-handedness');
+    } else {
+        rightHandBtn.classList.add('active-handedness');
+    }
+
+    handLabel = hand;
+}
+
 function startArkanoid() {
     if (canvas && ctx) {
         // If already initialized, just reset game state
-        gameState = STATE.HAND_SELECT;
+        gameState = STATE.START;
         return;
     }
 
@@ -423,7 +514,15 @@ function startArkanoid() {
     }
     ctx = canvas.getContext("2d");
 
-    gameState = STATE.HAND_SELECT;
+    // Initialize game objects
+    paddle = new Paddle(difficultyMult);
+    ball = new Ball(difficultyMult);
+    bricks = createBricks();
+
+    // Setup button event listeners
+    setupButtons();
+
+    gameState = STATE.START;
     requestAnimationFrame(update);
 }
 

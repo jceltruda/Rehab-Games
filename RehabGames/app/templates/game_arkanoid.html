@@ -7,13 +7,76 @@
     <title>Rehab Games - Arkanoid</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <style>
+        .home-container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2rem;
+            width: 90%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .info-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .game-column {
+            flex: 2;
+            display: none; /* hidden until Start Game */
+        }
+
         .arkanoid-container {
             margin: 30px auto 0;
             max-width: 800px;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-            display: none; /* shown after Start Game */
+        }
+
+        #arkanoidCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background-color: #222;
+        }
+
+        .game-controls {
+            margin-top: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-controls button,
+        .handedness-controls button,
+        #gameControlButton {
+            font-family: var(--font-pixel);
+            font-size: 0.9rem;
+            color: var(--neon-cyan);
+            background-color: transparent;
+            border: 2px solid var(--neon-cyan);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .difficulty-controls button:hover,
+        .handedness-controls button:hover,
+        #gameControlButton:hover {
+            box-shadow: 0 0 10px var(--neon-cyan) inset, 0 0 15px var(--neon-cyan);
+        }
+        
+        .difficulty-controls button.active-difficulty,
+        .handedness-controls button.active-handedness {
+            background-color: var(--neon-cyan);
+            color: var(--dark-bg);
         }
 
         .webcam-container {
@@ -27,7 +90,7 @@
         .webcam-toggle {
             font-size: 0.9rem;
             color: #eee;
-            margin-top: 2rem; /* Space from buttons/game */
+            margin-top: 2rem;
             margin-bottom: 8px; 
             display: inline-block;
         }
@@ -35,13 +98,6 @@
         .webcam-video-wrapper {
             position: relative;
             display: inline-block;
-        }
-
-        #arkanoidCanvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            background-color: #222;
         }
 
         #webcam {
@@ -57,58 +113,76 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;   /* scaled to match video */
+            width: 100%;
             height: 100%;
             pointer-events: none;
+            transform: scaleX(-1);
         }
 
+        @media (max-width: 1024px) {
+            .home-container {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="home-container">
-        <h1>Arkanoid</h1>
-        <h2>Control the paddle using arm movement.</h2>
+        <div class="info-column">
+            <h1>Arkanoid</h1>
+            <h2>Control the paddle using arm movement.</h2>
 
-        <div class="description-box">
-            <p>
-                This game helps build upper-body mobility  
-                using left or right arm movement to guide the paddle.
-            </p>
-            <p>
-                You will select difficulty and which arm you want to use  
-                once the game launches.
-            </p>
+            <div class="description-box">
+                <p>
+                    This game helps build upper-body mobility  
+                    using left or right arm movement to guide the paddle.
+                </p>
+                <p>
+                    Select your difficulty and hand preference using the buttons below.
+                </p>
+                </br>
+            </div>
+
+            <button type="button" id="startGameBtn" class="cta-button">
+                Start Game
+            </button>
+            
             </br>
+
+            <label class="webcam-toggle">
+                <input type="checkbox" id="toggleWebcam" checked>
+                Show camera preview
+            </label>
+
+            <div id="webcamContainer" class="webcam-container">
+                <div class="webcam-video-wrapper">
+                    <video id="webcam" autoplay playsinline></video>
+                    <canvas id="webcamOverlay"></canvas>
+                </div>
+            </div>
+
+            <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
         </div>
 
-        <button type="button" id="startGameBtn" class="cta-button">
-            Start Game
-        </button>
-        
-        </br>
-
-        <div class="arkanoid-container" id="arkanoidContainer">
-            <canvas id="arkanoidCanvas" width="800" height="600"></canvas>
-        </div>
-
-        <label class="webcam-toggle">
-            <input type="checkbox" id="toggleWebcam" checked>
-            Show camera preview
-        </label>
-
-        <!-- Webcam preview under the game -->
-        <div id="webcamContainer" class="webcam-container">
-            <div class="webcam-video-wrapper">
-                <video id="webcam" autoplay playsinline></video>
-                <!-- overlay drawn by JS -->
-                <canvas id="webcamOverlay"></canvas>
+        <div class="game-column">
+            <div class="arkanoid-container" id="arkanoidContainer">
+                <canvas id="arkanoidCanvas" width="800" height="600"></canvas>
+                <div class="game-controls">
+                    <button id="gameControlButton">Start</button>
+                    <div class="difficulty-controls">
+                        <button id="easyBtn">Easy</button>
+                        <button id="normalBtn">Normal</button>
+                        <button id="hardBtn">Hard</button>
+                    </div>
+                    <div class="handedness-controls">
+                        <button id="leftHandBtn">Left Hand</button>
+                        <button id="rightHandBtn">Right Hand</button>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
     </div>
 
-    <!-- Your Arkanoid game logic -->
     <script src="{% static 'js/arkanoid.js' %}"></script>
 
     <!-- TF.js + MediaPipe Hands backend (CDN) -->
@@ -116,58 +190,58 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script> <!-- handPoseDetection -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script> <!-- MediaPipe runtime -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
 
     <!-- Hand control logic -->
     <script src="{% static 'js/arkanoid_hand_control.js' %}"></script>
 
     <script>
         const startBtn = document.getElementById('startGameBtn');
-        const container = document.getElementById('arkanoidContainer');
+        const gameColumn = document.querySelector('.game-column');
         const webcamContainer = document.getElementById('webcamContainer');
         const toggleCheckbox = document.getElementById('toggleWebcam');
-    
+
         // --- 1. Add the toggle logic ---
         function setWebcamVisibility() {
             if (toggleCheckbox.checked) {
                 webcamContainer.style.display = 'flex';
             } else {
-                webcamContainer.style.display = 'none';
-            }
-        }
-        toggleCheckbox.addEventListener('change', setWebcamVisibility);
+                webcamContainer.style.display = 'none';
+            }
+        }
+        toggleCheckbox.addEventListener('change', setWebcamVisibility);
 
-        // --- 2. Start the camera on page load ---
-        async function initializeCamera() {
-            // Start webcam + hand tracking immediately
-            if (window.initHandControl) {
-                try {
-                    await window.initHandControl();
-                } catch (err) {
-                    console.error("Error initializing hand control:", err);
-                }
-            }
-            // Set initial visibility based on the checkbox
-            setWebcamVisibility();
-        }
+        // --- 2. Start the camera on page load ---
+        async function initializeCamera() {
+            // Start webcam + hand tracking immediately
+            if (window.initHandControl) {
+                try {
+                    await window.initHandControl();
+                } catch (err) {
+                    console.error("Error initializing hand control:", err);
+                }
+            }
+            // Set initial visibility based on the checkbox
+            setWebcamVisibility();
+        }
 
-        // Run camera setup when the page finishes loading
-        window.addEventListener('load', initializeCamera);
+        // Run camera setup when the page finishes loading
+        window.addEventListener('load', initializeCamera);
 
-        // --- 3. Simplify the start button ---
-        startBtn.addEventListener('click', () => {
-            // Show game canvas
-            container.style.display = 'block';
+        // --- 3. Show game column when start button clicked ---
+        startBtn.addEventListener('click', () => {
+            // Show game canvas and column
+            gameColumn.style.display = 'block';
 
-            // Start Arkanoid game logic (from arkanoid.js)
-            if (window.startArkanoid) {
-                window.startArkanoid();
-            }
+            // Start Arkanoid game logic (from arkanoid.js)
+            if (window.startArkanoid) {
+                window.startArkanoid();
+            }
 
-            startBtn.disabled = true;
-            startBtn.textContent = "Game Running...";
-        });
-    </script>
+            startBtn.disabled = true;
+            startBtn.textContent = "Game Running...";
+        });
+    </script>
 </body>
 </html>
