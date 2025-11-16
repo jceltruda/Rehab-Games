@@ -50,7 +50,8 @@ body {
     align-items: center;
     justify-content: center;
     text-align: center;
-    overflow: hidden; /* Hide scrollbars from pseudo-elements */
+    overflow-x: hidden;
+    overflow-y: auto; /* Allow tall pages (e.g., Pong) to scroll */
     position: relative; /* For pseudo-element positioning */
 
     /* Animated Background Grid */
