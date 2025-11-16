@@ -286,10 +286,19 @@
         // Show game on right side
         document.querySelector(".game").style.display = "block";
         document.querySelector(".left-column").style = "";
-        bird = { x: canvas.width/4, y: canvas.height/2, width: BIRD_WIDTH, height: BIRD_HEIGHT, velocityY:0, velocityX:0 };
-        drawBird();
         // DO NOT start the game here
-    });
+        bird = {
+            x: canvas.width / 4,
+            y: canvas.height / 2,
+            width: BIRD_WIDTH,
+            height: BIRD_HEIGHT,
+            velocityY: 0,
+            velocityX: 0
+        };
+
+        // Tell gameLoop to draw a static bird
+        gameState = "preview";
+        });
 
     // ---- SECOND BUTTON STARTS GAME ----
     startGameBtn2.addEventListener("click", () => startGame());
@@ -433,6 +442,11 @@
         drawBackground();
 
         switch(gameState){
+            case "preview":
+                drawBackground();
+                drawBird();
+                break;
+
             case "countdown":
                 drawBird();
                 drawPipes();
@@ -496,6 +510,21 @@
 
             const lm = results.poseLandmarks;
 
+            const pointsToDraw = [11, 12, 15, 16]; 
+
+            debugCtx.fillStyle = "red";
+
+            for (const index of pointsToDraw) {
+                const p = lm[index];
+                const x = debugCanvas.width - (p.x * debugCanvas.width);
+                const y = p.y * debugCanvas.height;
+
+                debugCtx.beginPath();
+                debugCtx.arc(x, y, 5, 0, 2 * Math.PI);
+                debugCtx.fill();
+            }
+
+
             const leftWristY = lm[L_WR].y;
             const rightWristY = lm[R_WR].y;
             const leftShoulderY = lm[L_SH].y;
@@ -532,31 +561,6 @@
 
     init();
 </script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const glow = document.getElementById('cursor-glow');
-            if (!glow) return;
-
-            window.addEventListener('pointermove', (e) => {
-            glow.style.opacity = '1';
-            glow.style.left = e.clientX + 'px';
-            glow.style.top  = e.clientY + 'px';
-            });
-
-            window.addEventListener('pointerdown', () => {
-            glow.classList.add('clicking');
-            });
-
-            window.addEventListener('pointerup', () => {
-            glow.classList.remove('clicking');
-            });
-
-            window.addEventListener('pointerleave', () => {
-            glow.style.opacity = '0';
-            });
-        });
-        </script>
-        
 </body>
 </html>
+
