@@ -163,7 +163,6 @@
     </div>
 
 <script>
-    // ----- Setup -----
     const toggleCheckbox = document.getElementById('toggleWebcam');
     const webcamContainer = document.getElementById('webcamContainer');
 
@@ -180,8 +179,8 @@
     const gameOverScoreEl = document.getElementById('game-over-score');
     const countdownOverlay = document.getElementById('countdownOverlay');
 
-    const startGameBtn = document.getElementById('startGameBtn'); // First button
-    const startGameBtn2 = document.getElementById('startGameBtn2'); // Second button
+    const startGameBtn = document.getElementById('startGameBtn'); 
+    const startGameBtn2 = document.getElementById('startGameBtn2'); 
 
     const BIRD_WIDTH = 95;
     const BIRD_HEIGHT = 95;
@@ -190,8 +189,10 @@
     const HITBOX_X_SHRINK = 40;
     const HITBOX_Y_SHRINK = 54;
 
+    let armState = "neutral"; 
+
     const DIFFICULTY_LEVELS = {
-        'Easy': { 'PIPE_GAP': 300, 'PIPE_SPEED': 1.0, 'PIPE_SPACING': 200, 'GRAVITY': 0.045, 'FLAP_STRENGTH': -2.0, 'HORIZONTAL_SPEED': 2.0 },
+        'Easy': { 'PIPE_GAP': 300, 'PIPE_SPEED': 1.0, 'PIPE_SPACING': 200, 'GRAVITY': 0.045, 'FLAP_STRENGTH': -2.5, 'HORIZONTAL_SPEED': 2.0 },
         'Medium': { 'PIPE_GAP': 250, 'PIPE_SPEED': 1.5, 'PIPE_SPACING': 180, 'GRAVITY': 0.06, 'FLAP_STRENGTH': -3.2, 'HORIZONTAL_SPEED': 2.5 },
         'Hard': { 'PIPE_GAP': 200, 'PIPE_SPEED': 2.0, 'PIPE_SPACING': 150, 'GRAVITY': 0.08, 'FLAP_STRENGTH': -3.5, 'HORIZONTAL_SPEED': 3.0 }
     };
@@ -221,6 +222,8 @@
     const totalAssets = 2;
 
     const controls = { up:false, down:false, left:false, right:false, enter:false };
+    let armsWereUp = false;
+    let armsWereDown = false;
 
     // Keyboard
     function setupKeyboardControls() {
@@ -384,7 +387,10 @@
     function updateBird() {
         bird.velocityY += gameGravity;
 
-        if(controls.up){ bird.velocityY = gameFlapStrength; controls.up=false; }
+        if(controls.up){ 
+            bird.velocityY = gameFlapStrength; 
+            controls.up = false;  
+        }
         if(controls.down) bird.velocityY += FAST_FALL_STRENGTH;
 
         bird.velocityX = 0;
@@ -515,46 +521,57 @@
         });
 
         pose.onResults(results => {
-            if(!results.image) return;
+            if (!results.image) return;
 
-            debugCtx.clearRect(0,0,debugCanvas.width,debugCanvas.height);
+            debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
             debugCtx.save();
-            debugCtx.scale(-1,1);
-            debugCtx.drawImage(results.image, -debugCanvas.width,0,debugCanvas.width,debugCanvas.height);
+            debugCtx.scale(-1, 1);
+            debugCtx.drawImage(results.image, -debugCanvas.width, 0, debugCanvas.width, debugCanvas.height);
             debugCtx.restore();
 
-            if(!results.poseLandmarks?.length) return;
+            if (!results.poseLandmarks?.length) return;
 
             const lm = results.poseLandmarks;
-
-            const pointsToDraw = [11, 12, 15, 16]; 
+            const pointsToDraw = [11, 12, 15, 16];
 
             debugCtx.fillStyle = "red";
-
             for (const index of pointsToDraw) {
                 const p = lm[index];
                 const x = debugCanvas.width - (p.x * debugCanvas.width);
                 const y = p.y * debugCanvas.height;
-
                 debugCtx.beginPath();
                 debugCtx.arc(x, y, 5, 0, 2 * Math.PI);
                 debugCtx.fill();
             }
-
 
             const leftWristY = lm[L_WR].y;
             const rightWristY = lm[R_WR].y;
             const leftShoulderY = lm[L_SH].y;
             const rightShoulderY = lm[R_SH].y;
 
-            const THRESHOLD = -0.2;
-            const bothUp =
-                (leftWristY < leftShoulderY - THRESHOLD) &&
-                (rightWristY < rightShoulderY - THRESHOLD);
+            const UP_THRESHOLD = -0.25;    // same sensitivity for up
+            const DOWN_THRESHOLD = 0.05; // less sensitive for down (increase this to make it easier)
 
-            if(bothUp && window.visionEnabled && gameState==="playing")
-                controls.up = true;
+            const bothUp = (leftWristY < leftShoulderY - UP_THRESHOLD) &&
+                        (rightWristY < rightShoulderY - UP_THRESHOLD);
+
+            const bothDown = (leftWristY > leftShoulderY + DOWN_THRESHOLD) &&
+                            (rightWristY > rightShoulderY + DOWN_THRESHOLD);
+
+            // Track arm state to trigger one flap per motion
+            if (window.visionEnabled && gameState === "playing") {
+                if (bothUp && armState !== "up") {
+                    controls.up = true;
+                    armState = "up";
+                } else if (bothDown && armState !== "down") {
+                    controls.up = true;
+                    armState = "down";
+                } else if (!bothUp && !bothDown) {
+                    armState = "neutral"; // reset when arms are in middle
+                }
+            }
         });
+
 
         new Camera(vid, {
             onFrame: async()=>await pose.send({image:vid}),
@@ -563,6 +580,8 @@
         }).start();
     })();
 
+
+    
     // ----- Initialization -----
     function init(){
         setupKeyboardControls();
@@ -578,7 +597,6 @@
 
     init();
 </script>
-
     <script>
         document.addEventListener("DOMContentLoaded", () => {
             const glow = document.getElementById('cursor-glow');
@@ -602,8 +620,7 @@
             glow.style.opacity = '0';
             });
         });
-        </script>
-        
+    </script>
 </body>
 </html>
 
