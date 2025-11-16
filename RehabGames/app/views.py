@@ -28,6 +28,3 @@ def game_arkanoid_view(request):
 
 def vision_page(request):
     return render(request, 'vision.html')
-
-def game_road_fighter_view(request):
-    return render(request, "game_road_fighter.html")

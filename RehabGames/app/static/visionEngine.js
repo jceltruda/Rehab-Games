@@ -103,7 +103,7 @@ const VisionEngine = (function () {
 
         let out = {};
 
-        if (axes.includes("x")) out.x = 1 - wrist.x;
+        if (axes.includes("x")) out.x = wrist.x;
         if (axes.includes("y")) out.y = wrist.y;
         out.z = wrist.z;
 
@@ -117,7 +117,7 @@ const VisionEngine = (function () {
 
         let out = {};
 
-        if (axes.includes("x")) out.x = 1 - wristX;
+        if (axes.includes("x")) out.x = wristX;
         if (axes.includes("y")) out.y = wristY;
         out.z = (left.wrist.z + right.wrist.z) / 2;
 
