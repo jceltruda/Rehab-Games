@@ -7,13 +7,35 @@
     <title>Rehab Games - Pong</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <style>
+        .home-container {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 2rem;
+            width: 90%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .info-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .game-column {
+            flex: 2;
+            display: none; /* hidden until Start Game */
+        }
+
         .pong-container {
             margin: 30px auto 0;
             max-width: 800px;
             border-radius: 16px;
             overflow: hidden;
             box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-            display: none; /* shown after Start Game */
         }
 
         #gameCanvas {
@@ -93,57 +115,64 @@
             pointer-events: none;
             transform: scaleX(-1);
         }
+
+        @media (max-width: 1024px) {
+            .home-container {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="home-container">
-        <h1>Pong</h1>
-        <h2>Control the paddle with your arm.</h2>
+        <div class="info-column">
+            <h1>Pong</h1>
+            <h2>Control the paddle with your arm.</h2>
 
-        <div class="description-box">
-            <p>
-                A classic arcade game to help with arm mobility.
-            </p>
-            <p>
-                You will select a difficulty before starting the game.
-            </p>
-            </br>
-        </div>
-
-        <button type="button" id="startGameBtn" class="cta-button">
-            Start Game
-        </button>
-        
-        </br>
-
-        <div class="pong-container" id="pongContainer">
-            <canvas id="gameCanvas" width="800" height="600"></canvas>
-            <div class="game-controls">
-                <button id="gameControlButton">Start</button>
-                <div class="difficulty-controls">
-                    <button id="easyBtn">Easy</button>
-                    <button id="mediumBtn">Medium</button>
-                    <button id="hardBtn">Hard</button>
-                </div>
+            <div class="description-box">
+                <p>
+                    A classic arcade game to help with arm mobility.
+                </p>
+                <p>
+                    You will select a difficulty before starting the game.
+                </p>
+                </br>
             </div>
-        </div>
 
-        <label class="webcam-toggle">
+            <button type="button" id="startGameBtn" class="cta-button">
+                Start Game
+            </button>
+            
+            </br>
+
+            <label class="webcam-toggle">
                 <input type="checkbox" id="toggleWebcam" checked>
                 Show camera preview
             </label>
 
-        <!-- Webcam preview under the game -->
-        <div id="webcamContainer" class="webcam-container">
-
-            <div class="webcam-video-wrapper">
-                <video id="webcam" autoplay playsinline></video>
-                <!-- overlay drawn by JS -->
-                <canvas id="webcamOverlay"></canvas>
+            <div id="webcamContainer" class="webcam-container">
+                <div class="webcam-video-wrapper">
+                    <video id="webcam" autoplay playsinline></video>
+                    <canvas id="webcamOverlay"></canvas>
+                </div>
             </div>
+
+            <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
         </div>
 
-        <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
+        <div class="game-column">
+            <div class="pong-container" id="pongContainer">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+                <div class="game-controls">
+                    <button id="gameControlButton">Start</button>
+                    <div class="difficulty-controls">
+                        <button id="easyBtn">Easy</button>
+                        <button id="mediumBtn">Medium</button>
+                        <button id="hardBtn">Hard</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="{% static 'js/pong.js' %}"></script>
@@ -162,6 +191,7 @@
     <script>
         const startBtn = document.getElementById('startGameBtn');
         const container = document.getElementById('pongContainer');
+        const gameColumn = document.querySelector('.game-column');
         const webcamContainer = document.getElementById('webcamContainer');
         const toggleCheckbox = document.getElementById('toggleWebcam');
 
@@ -196,7 +226,7 @@
         // --- FIX 3: Simplify the start button ---
         // It only needs to show the game canvas and disable itself
         startBtn.addEventListener('click', () => {
-            // Show game canvas and controls
+            gameColumn.style.display = 'block';
             container.style.display = 'block';
 
             // The camera and toggle are already working.
