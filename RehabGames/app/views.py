@@ -97,7 +97,7 @@ def set_username(request):
         return JsonResponse({"error": "Username required"}, status=400)
 
     # base queryset: all Guest scores
-    qs = Score.objects.filter(player_name="Guest")
+    qs = Score.objects
 
     # optionally narrow to a game, e.g. 'arkanoid' or 'shoulder-bird'
     if game:
