@@ -27,9 +27,6 @@
         .webcam-toggle {
             font-size: 0.9rem;
             color: #eee;
-            margin-top: 2rem;
-            margin-bottom: 8px; 
-            display: inline-block; /* Ensures margin works */
         }
 
         .webcam-video-wrapper {
@@ -57,7 +54,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;    /* scaled to match video */
+            width: 100%;   /* scaled to match video */
             height: 100%;
             pointer-events: none;
         }
@@ -71,11 +68,11 @@
 
         <div class="description-box">
             <p>
-                This game helps build upper-body mobility 
+                This game helps build upper-body mobility  
                 using left or right arm movement to guide the paddle.
             </p>
             <p>
-                You will select difficulty and which arm you want to use 
+                You will select difficulty and which arm you want to use  
                 once the game launches.
             </p>
             </br>
@@ -91,27 +88,36 @@
             <canvas id="arkanoidCanvas" width="800" height="600"></canvas>
         </div>
 
-        <label class="webcam-toggle">
-            <input type="checkbox" id="toggleWebcam" checked>
-            Show camera preview
-        </label>
-
+        <!-- Webcam preview under the game -->
         <div id="webcamContainer" class="webcam-container">
+            <label class="webcam-toggle">
+                <input type="checkbox" id="toggleWebcam" checked>
+                Show camera preview
+            </label>
+
             <div class="webcam-video-wrapper">
                 <video id="webcam" autoplay playsinline></video>
+                <!-- overlay drawn by JS -->
                 <canvas id="webcamOverlay"></canvas>
             </div>
         </div>
+
         <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
     </div>
 
+    <!-- Your Arkanoid game logic -->
     <script src="{% static 'js/arkanoid.js' %}"></script>
 
+    <!-- TF.js + MediaPipe Hands backend (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script> <script src="https://cdn.jsdelivr.net/npm/@medipe/hands"></script> <script src="{% static 'js/arkanoid_hand_control.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection"></script> <!-- handPoseDetection -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script> <!-- MediaPipe runtime -->
+
+    <!-- Hand control logic -->
+    <script src="{% static 'js/arkanoid_hand_control.js' %}"></script>
 
     <script>
         const startBtn = document.getElementById('startGameBtn');
