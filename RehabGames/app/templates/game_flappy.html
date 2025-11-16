@@ -72,6 +72,23 @@
             gap: 12px;
         }
 
+        #ui-layer {
+            position: absolute;
+            inset: 0;   
+            pointer-events: none;
+        }
+
+        #game-over-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            pointer-events: auto;
+        }
+
     </style>
 </head>
 
@@ -563,4 +580,5 @@
 </script>
 </body>
 </html>
+
 
