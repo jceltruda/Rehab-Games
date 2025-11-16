@@ -20,7 +20,5 @@ from app.views import vision_page
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('app.urls')),
-    path('vision/', vision_page, name='vision_page'),
-
+    path('', include('app.urls'))
 ]
