@@ -76,7 +76,7 @@
 </head>
 
 <body>
-    <h1>Flappy Bird</h1>
+    <h1>Flappy Bird Rehab</h1>
 
     <div class="main-row">
 
@@ -84,13 +84,10 @@
         <div class="left-column" style="margin-left: 30vw">
             <div class="game-container">
                 <div id="menu-container" class="message-box">
-                    <h2 style = "color: var(--neon-cyan)">Raise your arms to flap.</h2>
+                    <h2>Control the flaps with your arms</h2>
                     <div class="description-box">
-                        <h3 style="font-family: var(--font-modern); color: var(--light-purple); font-weight: 400; font-size: 1rem; line-height: 1.6; margin-top: 0; margin-bottom: 4rem; text-shadow: 0 0 5px rgba(224, 170, 255, 0.5); text-align: center;">
-                        <p>This game trains Shoulder Abduction, the motion of raising your arm out to your side, up, and down.</p>
-                        <p>This is a fundamental exercise for building strength in your deltoid muscles,</p>
-                        <p>which is critical for lifting objects and performing overhead tasks.</p>
-                        </h3>
+                        <p>A classic arcade game to help with arm mobility.</p>
+                        <p>You will select a difficulty before starting the game.</p>
                     </div>
 
                     <button style="margin-top: 15px;" type="button" id="startGameBtn" class="cta-button">
@@ -286,10 +283,19 @@
         // Show game on right side
         document.querySelector(".game").style.display = "block";
         document.querySelector(".left-column").style = "";
-        bird = { x: canvas.width/4, y: canvas.height/2, width: BIRD_WIDTH, height: BIRD_HEIGHT, velocityY:0, velocityX:0 };
-        drawBird();
         // DO NOT start the game here
-    });
+        bird = {
+            x: canvas.width / 4,
+            y: canvas.height / 2,
+            width: BIRD_WIDTH,
+            height: BIRD_HEIGHT,
+            velocityY: 0,
+            velocityX: 0
+        };
+
+        // Tell gameLoop to draw a static bird
+        gameState = "preview";
+        });
 
     // ---- SECOND BUTTON STARTS GAME ----
     startGameBtn2.addEventListener("click", () => startGame());
@@ -433,6 +439,11 @@
         drawBackground();
 
         switch(gameState){
+            case "preview":
+                drawBackground();
+                drawBird();
+                break;
+
             case "countdown":
                 drawBird();
                 drawPipes();
@@ -496,6 +507,21 @@
 
             const lm = results.poseLandmarks;
 
+            const pointsToDraw = [11, 12, 15, 16]; 
+
+            debugCtx.fillStyle = "red";
+
+            for (const index of pointsToDraw) {
+                const p = lm[index];
+                const x = debugCanvas.width - (p.x * debugCanvas.width);
+                const y = p.y * debugCanvas.height;
+
+                debugCtx.beginPath();
+                debugCtx.arc(x, y, 5, 0, 2 * Math.PI);
+                debugCtx.fill();
+            }
+
+
             const leftWristY = lm[L_WR].y;
             const rightWristY = lm[R_WR].y;
             const leftShoulderY = lm[L_SH].y;
@@ -532,31 +558,6 @@
 
     init();
 </script>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const glow = document.getElementById('cursor-glow');
-            if (!glow) return;
-
-            window.addEventListener('pointermove', (e) => {
-            glow.style.opacity = '1';
-            glow.style.left = e.clientX + 'px';
-            glow.style.top  = e.clientY + 'px';
-            });
-
-            window.addEventListener('pointerdown', () => {
-            glow.classList.add('clicking');
-            });
-
-            window.addEventListener('pointerup', () => {
-            glow.classList.remove('clicking');
-            });
-
-            window.addEventListener('pointerleave', () => {
-            glow.style.opacity = '0';
-            });
-        });
-        </script>
-        
 </body>
 </html>
+
