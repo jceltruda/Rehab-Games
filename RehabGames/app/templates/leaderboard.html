@@ -1,0 +1,84 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Rehab Games - Leaderboard</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        .leaderboard-container {
+            max-width: 800px;
+            margin: 40px auto;
+            text-align: center;
+        }
+        .game-select-form {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #222;
+            color: #eee;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background: #333;
+            color: #fff;
+        }
+        td {
+            color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="leaderboard-container">
+        <h1>Leaderboard</h1>
+
+        <!-- Game selector -->
+        <form method="get" class="game-select-form">
+            <label for="game">Choose a game:</label>
+            <select name="game" id="game" onchange="this.form.submit()">
+                {% for value, label in game_choices %}
+                    <option value="{{ value }}" {% if value == selected_game %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                {% endfor %}
+            </select>
+            <noscript><button type="submit">Go</button></noscript>
+        </form>
+
+        {% if scores %}
+            <h2>{{ selected_game_label }}</h2>
+            <table>
+                <tr>
+                    <th>Player</th>
+                    <th>Score</th>
+                    <th>Difficulty</th>
+                    <th>Date</th>
+                </tr>
+                {% for s in scores %}
+                    <tr>
+                        <td>{{ s.player_name }}</td>
+                        <td>{{ s.score }}</td>
+                        <td>{{ s.difficulty }}</td>
+                        <td>{{ s.date|date:"M d, Y" }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p>No scores yet for this game.</p>
+        {% endif %}
+
+        <a href="{% url 'home' %}" class="back-link">← Back to Home</a>
+    </div>
+</body>
+</html>

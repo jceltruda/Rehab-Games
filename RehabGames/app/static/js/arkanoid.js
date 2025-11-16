@@ -74,6 +74,7 @@ let paddle, ball, bricks;
 let lives = 3;
 let score = 0;
 let win = false;
+let scoreSubmitted = false;  
 
 // ---- Paddle class ----
 class Paddle {
@@ -252,6 +253,40 @@ function drawText(ctx, text, size, color, cx, cy) {
     ctx.fillText(text, cx, cy);
 }
 
+async function submitScore(score) {
+    try {
+        const resp = await fetch("/submit_score/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                player: "Guest",
+                game: "arkanoid",
+                score: score,
+                difficulty: difficultyLabel,  // include difficulty
+            }),
+        });
+
+        if (!resp.ok) {
+            console.error("Submit failed:", resp.status, await resp.text());
+        } else {
+            console.log("Score submitted!");
+        }
+    } catch (err) {
+        console.error("Error submitting score:", err);
+    }
+}
+
+
+function handleGameOver(didWin) {
+    if (!scoreSubmitted) {
+        console.log("handleGameOver called. didWin =", didWin, "score =", score);
+        scoreSubmitted = true;
+        submitScore(score);
+    }
+    win = didWin;
+    gameState = STATE.GAME_OVER;
+}
+
 // ---- Input handling ----
 window.addEventListener("keydown", (e) => {
     const key = e.key;
@@ -282,6 +317,7 @@ window.addEventListener("keydown", (e) => {
         if (key === "ArrowLeft" || key === "a" || key === "A") keys.left = true;
         if (key === "ArrowRight" || key === "d" || key === "D") keys.right = true;
         if (key === " ") keys.space = true;
+        return;
     }
 
     if (gameState === STATE.GAME_OVER) {
@@ -307,6 +343,7 @@ function startNewGame() {
     lives = 3;
     score = 0;
     win = false;
+    scoreSubmitted = false;
 }
 
 // ---- Main loop ----
@@ -331,8 +368,7 @@ function update() {
         if (ball.y - ball.r > HEIGHT) {
             lives -= 1;
             if (lives <= 0) {
-                gameState = STATE.GAME_OVER;
-                win = false;
+                handleGameOver(false);
             } else {
                 ball.resetPositionOnly();
             }
@@ -340,8 +376,7 @@ function update() {
 
         // Win condition
         if (bricks.length === 0) {
-            gameState = STATE.GAME_OVER;
-            win = true;
+            handleGameOver(true);
         }
     }
 
@@ -351,6 +386,8 @@ function update() {
 
 // ---- Drawing ----
 function draw() {
+    if (!ctx) return;
+
     ctx.fillStyle = COLORS.GREY;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
