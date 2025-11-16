@@ -97,7 +97,7 @@ RehabGames/
 
 ### Frontend
 - **HTML5 Canvas**: Game rendering
-- **Vanilla JavaScript**: Game logic
+- **JavaScript**: Game logic
 - **MediaPipe Pose**: Real-time pose detection
 - **TensorFlow.js**: Machine learning backend
 
@@ -141,10 +141,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Joseph Celtruda** - [GitHub Profile](https://github.com/YOUR_USERNAME)
-- **Joseph Celtruda** - [GitHub Profile](https://github.com/YOUR_USERNAME)
-- **Joseph Celtruda** - [GitHub Profile](https://github.com/YOUR_USERNAME)
-- **Joseph Celtruda** - [GitHub Profile](https://github.com/YOUR_USERNAME)
+- **Joseph Celtruda** - [GitHub Profile](https://github.com/jceltruda)
+- **Harrison Schmidt** - [GitHub Profile](https://github.com/johnsmith376)
+- **Nicole Stepanenko** - [GitHub Profile](https://github.com/nstepanenko464)
+- **Jimi Xia** - [GitHub Profile](https://github.com/jxia20)
 
 ## 📞 Links
 
