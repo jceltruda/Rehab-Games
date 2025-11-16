@@ -26,7 +26,6 @@
             color: var(--dark-bg);
         }
 
-        /* NEW LAYOUT CHANGES */
         .main-row {
             display: flex;
             flex-direction: row;
@@ -98,7 +97,6 @@
 
     <div class="main-row">
 
-        <!-- LEFT SECTION (Menu + Camera) -->
         <div class="left-column" style="margin-left: 30vw">
             <div class="game-container">
                 <div id="menu-container" class="message-box">
@@ -132,7 +130,6 @@
             <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
         </div>
 
-        <!-- RIGHT SECTION (Actual Game Canvas) -->
         <div class="right-column">
             <div class="game" style="display:none; position:relative;">
                 <canvas id="gameCanvas" width="400" height="600"></canvas>
@@ -270,7 +267,6 @@
         assets.pipeTop = topCanvas;
     }
 
-    // SUBMIT SCORE
     async function submitScoreToServer(score) {
         try {
             const resp = await fetch("/submit_score/", {
@@ -300,14 +296,11 @@
         gameOverContainerEl.style.display = "block";
     }
 
-    // ---- NEW: FIRST BUTTON BEHAVIOR ----
     startGameBtn.addEventListener("click", () => {
         startGameBtn.innerText = "Game Running ...";
 
-        // Show game on right side
         document.querySelector(".game").style.display = "block";
         document.querySelector(".left-column").style = "";
-        // DO NOT start the game here
         bird = {
             x: canvas.width / 4,
             y: canvas.height / 2,
@@ -317,14 +310,11 @@
             velocityX: 0
         };
 
-        // Tell gameLoop to draw a static bird
         gameState = "preview";
         });
 
-    // ---- SECOND BUTTON STARTS GAME ----
     startGameBtn2.addEventListener("click", () => startGame());
 
-    // ACTUAL GAME START FUNCTION
     function startGame() {
         if (assetsLoaded < totalAssets) { alert("Assets still loading!"); return; }
 
@@ -489,7 +479,7 @@
                 drawBird();
                 if(controls.enter){
                     document.querySelector(".game").style.display = "none";
-                    startGameBtn.innerText = "Start Game"; // Reset label
+                    startGameBtn.innerText = "Start Game"; 
                     menuContainerEl.style.display = "block";
                     gameState = "menu";
                     controls.enter = false;
@@ -500,7 +490,6 @@
         requestAnimationFrame(gameLoop);
     }
 
-    // ----- Vision Setup -----
     (function setupVision(){
         const L_WR=15,R_WR=16,L_SH=11,R_SH=12;
         window.visionEnabled=false;
@@ -550,8 +539,8 @@
             const leftShoulderY = lm[L_SH].y;
             const rightShoulderY = lm[R_SH].y;
 
-            const UP_THRESHOLD = -0.25;    // same sensitivity for up
-            const DOWN_THRESHOLD = 0.05; // less sensitive for down (increase this to make it easier)
+            const UP_THRESHOLD = -0.25;    
+            const DOWN_THRESHOLD = 0.05; 
 
             const bothUp = (leftWristY < leftShoulderY - UP_THRESHOLD) &&
                         (rightWristY < rightShoulderY - UP_THRESHOLD);
@@ -559,7 +548,6 @@
             const bothDown = (leftWristY > leftShoulderY + DOWN_THRESHOLD) &&
                             (rightWristY > rightShoulderY + DOWN_THRESHOLD);
 
-            // Track arm state to trigger one flap per motion
             if (window.visionEnabled && gameState === "playing") {
                 if (bothUp && armState !== "up") {
                     controls.up = true;
@@ -568,7 +556,7 @@
                     controls.up = true;
                     armState = "down";
                 } else if (!bothUp && !bothDown) {
-                    armState = "neutral"; // reset when arms are in middle
+                    armState = "neutral"; 
                 }
             }
         });
@@ -583,7 +571,6 @@
 
 
     
-    // ----- Initialization -----
     function init(){
         setupKeyboardControls();
 
