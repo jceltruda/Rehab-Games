@@ -7,4 +7,6 @@ urlpatterns = [
     path('game/pong/', views.game_pong_view, name='game_pong'),
     path('game/flappy/', views.game_flappy_view, name='game_flappy'),
     path('game/arkanoid/', views.game_arkanoid_view, name='game_arkanoid'),
+    path('game/road_fighter/', views.game_road_fighter_view, name='game_road_fighter')
+
 ]
