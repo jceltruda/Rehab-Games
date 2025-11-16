@@ -27,8 +27,9 @@
         .webcam-toggle {
             font-size: 0.9rem;
             color: #eee;
-            margin-top: 1rem;
+            margin-top: 2rem; /* Space from buttons/game */
             margin-bottom: 8px; 
+            display: inline-block;
         }
 
         .webcam-video-wrapper {
@@ -124,24 +125,49 @@
     <script>
         const startBtn = document.getElementById('startGameBtn');
         const container = document.getElementById('arkanoidContainer');
+        const webcamContainer = document.getElementById('webcamContainer');
+        const toggleCheckbox = document.getElementById('toggleWebcam');
+    
+        // --- 1. Add the toggle logic ---
+        function setWebcamVisibility() {
+            if (toggleCheckbox.checked) {
+                webcamContainer.style.display = 'flex';
+            } else {
+                webcamContainer.style.display = 'none';
+            }
+        }
+        toggleCheckbox.addEventListener('change', setWebcamVisibility);
 
-        startBtn.addEventListener('click', async () => {
-            // Show game canvas
-            container.style.display = 'block';
+        // --- 2. Start the camera on page load ---
+        async function initializeCamera() {
+            // Start webcam + hand tracking immediately
+            if (window.initHandControl) {
+                try {
+                    await window.initHandControl();
+                } catch (err) {
+                    console.error("Error initializing hand control:", err);
+                }
+            }
+            // Set initial visibility based on the checkbox
+            setWebcamVisibility();
+        }
 
-            // Start webcam + hand tracking
-            if (window.initHandControl) {
-                await window.initHandControl();
-            }
+        // Run camera setup when the page finishes loading
+        window.addEventListener('load', initializeCamera);
 
-            // Start Arkanoid
-            if (window.startArkanoid) {
-                window.startArkanoid();
-            }
+        // --- 3. Simplify the start button ---
+        startBtn.addEventListener('click', () => {
+            // Show game canvas
+            container.style.display = 'block';
 
-            startBtn.disabled = true;
-            startBtn.textContent = "Game Running...";
-        });
-    </script>
+            // Start Arkanoid game logic (from arkanoid.js)
+            if (window.startArkanoid) {
+                window.startArkanoid();
+            }
+
+            startBtn.disabled = true;
+            startBtn.textContent = "Game Running...";
+        });
+    </script>
 </body>
 </html>
