@@ -10,6 +10,22 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <style>
+        /* Ensure score is visible above canvas */
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
+            z-index: 10;
+        }
+
+        .difficulty-btn.selected {
+            background-color: #4CAF50;
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
@@ -19,21 +35,23 @@
         <div class="game-container">
             <div id="menu-container" class="message-box">
                 <h2>Control the flaps with your arms</h2>
-                 <div class="description-box">
-                    <p>
-                        A classic arcade game to help with arm mobility.
-                    </p>
-                    <p>
-                        You will select a difficulty before starting the game.
-                    </p>
-                    </br>
+                <div class="description-box">
+                    <p>A classic arcade game to help with arm mobility.</p>
+                    <p>You will select a difficulty before starting the game.</p>
                 </div>
-                    <button style="margin-bottom: 35px;" type="button" id="startGameBtn" class="cta-button">
-                        Start Game
-                    </button>            
+
+                <div id="difficulty-buttons">
+                    <button class="difficulty-btn" data-difficulty="Easy">Easy</button>
+                    <button class="difficulty-btn" data-difficulty="Medium">Medium</button>
+                    <button class="difficulty-btn" data-difficulty="Hard">Hard</button>
+                </div>
+
+                <button style="margin-top: 15px;" type="button" id="startGameBtn" class="cta-button">
+                    Start Game
+                </button>
             </div>
 
-            <div class="game" style="display: none">
+            <div class="game" style="display: none; position: relative;">
                 <canvas id="gameCanvas" width="400" height="600"></canvas>
                 <div id="ui-layer">
                     <div id="score">0</div>
@@ -43,15 +61,15 @@
                         <p class="instructions">Press ENTER to return to menu</p>
                     </div>
                 </div>
-                <div id="countdownOverlay">3</div>
+                <div id="countdownOverlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:64px; color:white;">3</div>
             </div>  
         </div>
+
         <div class="webcam-section">
             <label style="margin-bottom: 20px" class="webcam-toggle">
                 <input type="checkbox" id="toggleWebcam" checked>
                 Show camera preview
             </label>
-
             <div id="webcamContainer">
                 <div id="debugPanel">
                     <canvas id="debugVideoCanvas" width="400" height="300"></canvas>
@@ -60,403 +78,303 @@
         </div>
 
         <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
-
     </div>
 
+<script>
+    // ----- Setup -----
+    const toggleCheckbox = document.getElementById('toggleWebcam');
+    const webcamContainer = document.getElementById('webcamContainer');
 
-    <script>
+    toggleCheckbox.addEventListener('change', () => {
+        webcamContainer.style.display = toggleCheckbox.checked ? 'flex' : 'none';
+    });
 
-        const toggleCheckbox = document.getElementById('toggleWebcam');
-        const webcamContainer = document.getElementById('webcamContainer');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-        function setWebcamVisibility() {
-            if (toggleCheckbox.checked) {
-                webcamContainer.style.display = 'flex';
-            } else {
-                webcamContainer.style.display = 'none';
+    const scoreEl = document.getElementById('score');
+    const menuContainerEl = document.getElementById('menu-container');
+    const gameOverContainerEl = document.getElementById('game-over-container');
+    const gameOverScoreEl = document.getElementById('game-over-score');
+    const countdownOverlay = document.getElementById('countdownOverlay');
+    const startGameBtn = document.getElementById('startGameBtn');
+
+    const BIRD_WIDTH = 95;
+    const BIRD_HEIGHT = 95;
+    const FAST_FALL_STRENGTH = 1.5; 
+    const PIPE_WIDTH = 80;
+    const HITBOX_X_SHRINK = 40;
+    const HITBOX_Y_SHRINK = 54;
+
+    const DIFFICULTY_LEVELS = {
+        'Easy': { 'PIPE_GAP': 300, 'PIPE_SPEED': 1.0, 'PIPE_SPACING': 200, 'GRAVITY': 0.045, 'FLAP_STRENGTH': -3.0, 'HORIZONTAL_SPEED': 2.0 },
+        'Medium': { 'PIPE_GAP': 250, 'PIPE_SPEED': 1.5, 'PIPE_SPACING': 180, 'GRAVITY': 0.06, 'FLAP_STRENGTH': -3.2, 'HORIZONTAL_SPEED': 2.5 },
+        'Hard': { 'PIPE_GAP': 200, 'PIPE_SPEED': 2.0, 'PIPE_SPACING': 150, 'GRAVITY': 0.08, 'FLAP_STRENGTH': -3.5, 'HORIZONTAL_SPEED': 3.0 }
+    };
+
+    let selectedDifficulty = 'Easy';
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedDifficulty = btn.dataset.difficulty;
+            document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        });
+    });
+
+    let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
+    let gameGravity, gameFlapStrength, gameHorizontalSpeed;
+    let bird, pipes, score, frame, gameState;
+
+    const assets = {
+        bird: new Image(),
+        pipeBottom: new Image(),
+        pipeTop: null
+    };
+    let pipeImgHeight = 500; 
+    let assetsLoaded = 0;
+    const totalAssets = 2;
+
+    const controls = { up:false, down:false, left:false, right:false, enter:false };
+
+    // ----- Keyboard -----
+    function setupKeyboardControls() {
+        window.addEventListener('keydown', e => {
+            if(e.key==='ArrowUp') controls.up=true;
+            if(e.key==='ArrowDown') controls.down=true;
+            if(e.key==='ArrowLeft') controls.left=true;
+            if(e.key==='ArrowRight') controls.right=true;
+            if(e.key==='Enter') controls.enter=true;
+        });
+        window.addEventListener('keyup', e => {
+            if(e.key==='ArrowUp') controls.up=false;
+            if(e.key==='ArrowDown') controls.down=false;
+            if(e.key==='ArrowLeft') controls.left=false;
+            if(e.key==='ArrowRight') controls.right=false;
+            if(e.key==='Enter') controls.enter=false;
+        });
+    }
+
+    function onAssetLoad() {
+        assetsLoaded++;
+        if (assetsLoaded === totalAssets) preparePipeImages();
+    }
+
+    function preparePipeImages() {
+        const scaleFactor = PIPE_WIDTH / assets.pipeBottom.width;
+        pipeImgHeight = Math.floor(assets.pipeBottom.height * scaleFactor);
+
+        const bottomCanvas = document.createElement('canvas');
+        bottomCanvas.width = PIPE_WIDTH;
+        bottomCanvas.height = pipeImgHeight;
+        bottomCanvas.getContext('2d').drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
+        assets.pipeBottom = bottomCanvas;
+
+        const topCanvas = document.createElement('canvas');
+        topCanvas.width = PIPE_WIDTH;
+        topCanvas.height = pipeImgHeight;
+        const topCtx = topCanvas.getContext('2d');
+        topCtx.translate(0, pipeImgHeight);
+        topCtx.scale(1, -1);
+        topCtx.drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
+        assets.pipeTop = topCanvas;
+    }
+
+    function setGameOver() {
+        gameState = 'gameOver';
+        gameOverScoreEl.innerText = `Score: ${score}`;
+        gameOverContainerEl.style.display = 'block';
+    }
+
+    function startGame() {
+        if(assetsLoaded < totalAssets) { alert("Assets still loading!"); return; }
+
+        const diff = selectedDifficulty;
+        gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
+        gamePipeSpeed = DIFFICULTY_LEVELS[diff]['PIPE_SPEED'];
+        gamePipeSpacing = DIFFICULTY_LEVELS[diff]['PIPE_SPACING'];
+        gameGravity = DIFFICULTY_LEVELS[diff]['GRAVITY'];
+        gameFlapStrength = DIFFICULTY_LEVELS[diff]['FLAP_STRENGTH'];
+        gameHorizontalSpeed = DIFFICULTY_LEVELS[diff]['HORIZONTAL_SPEED'];
+
+        bird = { x: canvas.width/4, y: canvas.height/2, width: BIRD_WIDTH, height: BIRD_HEIGHT, velocityY:0, velocityX:0 };
+        pipes = [];
+        spawnPipe(); // Spawn first pipe immediately
+        score = 0;
+        frame = 0;
+        scoreEl.innerText = score;
+
+        gameState = 'countdown';
+        menuContainerEl.style.display='none';
+        gameOverContainerEl.style.display='none';
+        document.querySelector('.game').style.display='block';
+        scoreEl.style.display='block';
+
+        window.visionEnabled=false;
+        countdownOverlay.style.display='block';
+        countdownOverlay.innerText = "3";
+        let countdown = 3;
+        const countdownTimer = setInterval(()=>{
+            countdown--;
+            if(countdown>0) countdownOverlay.innerText=String(countdown);
+            else {
+                clearInterval(countdownTimer);
+                countdownOverlay.style.display='none';
+                window.visionEnabled=true;
+                gameState='playing';
             }
+        },1000);
+    }
+
+    function spawnPipe() {
+        const gapTop = Math.random()*(canvas.height - gamePipeGap - 100) + 50;
+        pipes.push({
+            x: canvas.width,
+            width: PIPE_WIDTH,
+            gapTop: gapTop,
+            gapHeight: gamePipeGap,
+            passed:false
+        });
+    }
+
+    function getHitbox(bird) {
+        const dx = HITBOX_X_SHRINK/2;
+        const dy = HITBOX_Y_SHRINK/2;
+        return { x: bird.x+dx, y:bird.y+dy, width: bird.width-HITBOX_X_SHRINK, height: bird.height-HITBOX_Y_SHRINK };
+    }
+
+    function updateBird() {
+        bird.velocityY += gameGravity;
+        if(controls.up) { bird.velocityY=gameFlapStrength; controls.up=false; }
+        if(controls.down) bird.velocityY+=FAST_FALL_STRENGTH;
+        bird.velocityX=0;
+        if(controls.left) bird.velocityX=-gameHorizontalSpeed;
+        if(controls.right) bird.velocityX=gameHorizontalSpeed;
+
+        bird.y+=bird.velocityY;
+        bird.x+=bird.velocityX;
+
+        if(bird.x<0) bird.x=0;
+        if(bird.x+bird.width>canvas.width) bird.x=canvas.width-bird.width;
+
+        const hitbox = getHitbox(bird);
+        if(hitbox.y + hitbox.height > canvas.height || hitbox.y<0) setGameOver();
+    }
+
+    function updatePipes() {
+        if(frame % gamePipeSpacing ===0) spawnPipe();
+
+        for(let i=pipes.length-1;i>=0;i--){
+            const pipe=pipes[i];
+            pipe.x-=gamePipeSpeed;
+
+            if(pipe.x+pipe.width<0){ pipes.splice(i,1); continue; }
+
+            if(!pipe.passed && pipe.x<bird.x){ pipe.passed=true; score++; scoreEl.innerText=score; }
+
+            if(checkCollision(bird,pipe)) setGameOver();
         }
+    }
 
-        toggleCheckbox.addEventListener('change', setWebcamVisibility);
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    function checkCollision(bird,pipe){
+        const hitbox=getHitbox(bird);
+        if(hitbox.x < pipe.x + pipe.width && hitbox.x + hitbox.width > pipe.x){
+            if(hitbox.y < pipe.gapTop) return true;
+            if(hitbox.y + hitbox.height > pipe.gapTop + pipe.gapHeight) return true;
+        }
+        return false;
+    }
 
-        const scoreEl = document.getElementById('score');
-        const menuContainerEl = document.getElementById('menu-container');
-        const gameOverContainerEl = document.getElementById('game-over-container');
-        const gameOverScoreEl = document.getElementById('game-over-score');
-        const countdownOverlay = document.getElementById('countdownOverlay');
-        const startGameBtn = document.getElementById('startGameBtn');
+    function drawBird(){
+        if(assets.bird.complete) ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
+        else { ctx.fillStyle='yellow'; ctx.fillRect(bird.x,bird.y,bird.width,bird.height); }
+    }
 
-        const BIRD_WIDTH = 95;
-        const BIRD_HEIGHT = 95;
-        const FAST_FALL_STRENGTH = 1.5; 
-        const PIPE_WIDTH = 80;
-        const HITBOX_X_SHRINK = 40;
-        const HITBOX_Y_SHRINK = 54;
-
-        const DIFFICULTY_LEVELS = {
-            'Easy': {
-                'PIPE_GAP': 300,          
-                'PIPE_SPEED': 1.0,        
-                'PIPE_SPACING': 200,      
-                'GRAVITY': 0.045,         
-                'FLAP_STRENGTH': -3.0,    
-                'HORIZONTAL_SPEED': 2.0
+    function drawPipes(){
+        pipes.forEach(pipe=>{
+            if(assets.pipeTop){
+                ctx.drawImage(assets.pipeTop, pipe.x, pipe.gapTop - pipeImgHeight, pipe.width, pipeImgHeight);
+                ctx.drawImage(assets.pipeBottom, pipe.x, pipe.gapTop + pipe.gapHeight, pipe.width, pipeImgHeight);
+            }else{
+                ctx.fillStyle='#008000';
+                ctx.fillRect(pipe.x,0,pipe.width,pipe.gapTop);
+                ctx.fillRect(pipe.x,pipe.gapTop+pipe.gapHeight,pipe.width,canvas.height-(pipe.gapTop+pipe.gapHeight));
             }
-        };
+        });
+    }
 
-        let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
-        let gameGravity, gameFlapStrength, gameHorizontalSpeed;
+    function drawBackground(){
+        ctx.fillStyle='#70c5ce';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
 
-        let bird, pipes, score, frame, gameState;
+    function gameLoop(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        drawBackground();
 
-        const assets = {
-            bird: new Image(),
-            pipeBottom: new Image(),
-            pipeTop: null 
-        };
-        let pipeImgHeight = 500; 
-        let assetsLoaded = 0;
-        const totalAssets = 2; 
-
-        const controls = {
-            up: false,
-            down: false,
-            left: false,
-            right: false,
-            enter: false
-        };
-
-        // Keyboard controls
-        function setupKeyboardControls() {
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowUp') controls.up = true;
-                if (e.key === 'ArrowDown') controls.down = true;
-                if (e.key === 'ArrowLeft') controls.left = true;
-                if (e.key === 'ArrowRight') controls.right = true;
-                if (e.key === 'Enter') controls.enter = true;
-            });
-
-            window.addEventListener('keyup', (e) => {
-                if (e.key === 'ArrowUp') controls.up = false;
-                if (e.key === 'ArrowDown') controls.down = false;
-                if (e.key === 'ArrowLeft') controls.left = false;
-                if (e.key === 'ArrowRight') controls.right = false;
-                if (e.key === 'Enter') controls.enter = false;
-            });
-        }
-
-        function onAssetLoad() {
-            assetsLoaded++;
-            if (assetsLoaded === totalAssets) {
-                preparePipeImages();
-            }
-        }
-
-        function preparePipeImages() {
-            const scaleFactor = PIPE_WIDTH / assets.pipeBottom.width;
-            pipeImgHeight = Math.floor(assets.pipeBottom.height * scaleFactor);
-
-            const bottomCanvas = document.createElement('canvas');
-            bottomCanvas.width = PIPE_WIDTH;
-            bottomCanvas.height = pipeImgHeight;
-            bottomCanvas.getContext('2d').drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
-            assets.pipeBottom = bottomCanvas;
-
-            const topCanvas = document.createElement('canvas');
-            topCanvas.width = PIPE_WIDTH;
-            topCanvas.height = pipeImgHeight;
-            const topCtx = topCanvas.getContext('2d');
-            topCtx.translate(0, pipeImgHeight);
-            topCtx.scale(1, -1);
-            topCtx.drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
-            assets.pipeTop = topCanvas;
-        }
-
-        function setGameOver() {
-            gameState = 'gameOver';
-            gameOverScoreEl.innerText = `Score: ${score}`;
-            gameOverContainerEl.style.display = 'block';
-        }
-
-        function startGame() {
-            const diff = 'Easy';
-            gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
-            gamePipeSpeed = DIFFICULTY_LEVELS[diff]['PIPE_SPEED'];
-            gamePipeSpacing = DIFFICULTY_LEVELS[diff]['PIPE_SPACING'];
-            gameGravity = DIFFICULTY_LEVELS[diff]['GRAVITY'];
-            gameFlapStrength = DIFFICULTY_LEVELS[diff]['FLAP_STRENGTH'];
-            gameHorizontalSpeed = DIFFICULTY_LEVELS[diff]['HORIZONTAL_SPEED'];
-
-            bird = {
-                x: canvas.width / 4,
-                y: canvas.height / 2,
-                width: BIRD_WIDTH,
-                height: BIRD_HEIGHT,
-                velocityY: 0,
-                velocityX: 0
-            };
-            pipes = [];
-            score = 0;
-            frame = 0;
-            scoreEl.innerText = score;
-
-            gameState = 'countdown';
-            menuContainerEl.style.display = 'none';
-            gameOverContainerEl.style.display = 'none';
-            document.querySelector('.game').style.display = 'block';
-            scoreEl.style.display = 'block';
-
-            window.visionEnabled = false; 
-            countdownOverlay.style.display = 'block';
-            countdownOverlay.innerText = "3";
-            let countdown = 3;
-            const countdownTimer = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    countdownOverlay.innerText = String(countdown);
-                } else {
-                    clearInterval(countdownTimer);
-                    countdownOverlay.style.display = 'none';
-                    window.visionEnabled = true;
-                    gameState = 'playing';
+        switch(gameState){
+            case 'countdown':
+                drawBird(); drawPipes(); break;
+            case 'playing':
+                frame++; updateBird(); updatePipes(); drawPipes(); drawBird(); break;
+            case 'gameOver':
+                drawPipes(); drawBird();
+                if(controls.enter){
+                    document.querySelector('.game').style.display='none';
+                    menuContainerEl.style.display='block';
+                    gameState='menu';
+                    controls.enter=false;
                 }
-            }, 1000);
+                break;
         }
+        requestAnimationFrame(gameLoop);
+    }
 
-        function spawnPipe() {
-            const gapTop = Math.random() * (canvas.height - gamePipeGap - 100) + 50;
-            const gapEnd = gapTop + gamePipeGap;
-            pipes.push({
-                x: canvas.width,
-                width: PIPE_WIDTH,
-                gapTop: gapTop,
-                gapHeight: gamePipeGap,
-                topRectY: gapTop - pipeImgHeight,
-                bottomRectY: gapEnd,
-                passed: false
-            });
+    // ----- Vision Setup (simplified) -----
+    (function setupVision(){
+        const L_WR=15,R_WR=16,L_SH=11,R_SH=12;
+        window.visionEnabled=false;
+        const debugCanvas=document.getElementById("debugVideoCanvas");
+        const debugCtx=debugCanvas.getContext("2d");
+        const visionVideo=document.createElement("video");
+        visionVideo.style.display="none"; visionVideo.autoplay=true; visionVideo.playsInline=true;
+        document.body.appendChild(visionVideo);
+
+        const poseDetector=new Pose({ locateFile:(file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}` });
+        poseDetector.setOptions({ modelComplexity:1, smoothLandmarks:true, enableSegmentation:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
+        poseDetector.onResults(onPoseResults);
+        new Camera(visionVideo,{ onFrame: async()=>await poseDetector.send({image:visionVideo}), width:640,height:480 }).start();
+
+        function onPoseResults(results){
+            if(!results.image) return;
+            debugCtx.clearRect(0,0,debugCanvas.width,debugCanvas.height);
+            debugCtx.save(); debugCtx.scale(-1,1); debugCtx.drawImage(results.image,-debugCanvas.width,0,debugCanvas.width,debugCanvas.height); debugCtx.restore();
+            if(!results.poseLandmarks?.length) return;
+            const lm=results.poseLandmarks;
+            function drawPoint(p,color){ const x=p.x*debugCanvas.width; const y=p.y*debugCanvas.height; debugCtx.beginPath(); debugCtx.arc(x,y,5,0,2*Math.PI); debugCtx.fillStyle=color; debugCtx.fill(); }
+            drawPoint(lm[L_WR],'red'); drawPoint(lm[R_WR],'red');
+
+            const leftWristY=lm[L_WR].y,rightWristY=lm[R_WR].y;
+            const leftShoulderY=lm[L_SH].y,rightShoulderY=lm[R_SH].y;
+            const THRESHOLD=-0.2;
+            const bothUp=(leftWristY<leftShoulderY-THRESHOLD)&&(rightWristY<rightShoulderY-THRESHOLD);
+            if(bothUp && window.visionEnabled && gameState==='playing') controls.up=true;
         }
+    })();
 
-        function getHitbox(bird) {
-            const dx = HITBOX_X_SHRINK / 2;
-            const dy = HITBOX_Y_SHRINK / 2;
-            return {
-                x: bird.x + dx,
-                y: bird.y + dy,
-                width: bird.width - HITBOX_X_SHRINK,
-                height: bird.height - HITBOX_Y_SHRINK
-            };
-        }
+    // ----- Initialization -----
+    function init(){
+        setupKeyboardControls();
 
-        function updateBird() {
-            bird.velocityY += gameGravity;
+        assets.bird.onload=onAssetLoad;
+        assets.pipeBottom.onload=onAssetLoad;
+        assets.bird.src="{% static 'bird.png' %}";
+        assets.pipeBottom.src="{% static 'pipe.png' %}";
 
-            if (controls.up) {
-                bird.velocityY = gameFlapStrength;
-                controls.up = false;
-            }
-            if (controls.down) bird.velocityY += FAST_FALL_STRENGTH;
+        startGameBtn.addEventListener('click', startGame);
+        gameLoop();
+    }
 
-            bird.velocityX = 0;
-            if (controls.left) bird.velocityX = -gameHorizontalSpeed;
-            if (controls.right) bird.velocityX = gameHorizontalSpeed;
-
-            bird.y += bird.velocityY;
-            bird.x += bird.velocityX;
-
-            if (bird.x < 0) bird.x = 0;
-            if (bird.x + bird.width > canvas.width) bird.x = canvas.width - bird.width;
-
-            const hitbox = getHitbox(bird);
-            if (hitbox.y + hitbox.height > canvas.height || hitbox.y < 0) setGameOver();
-        }
-
-        function updatePipes() {
-            if (frame % gamePipeSpacing === 0) spawnPipe();
-
-            for (let i = pipes.length - 1; i >= 0; i--) {
-                const pipe = pipes[i];
-                pipe.x -= gamePipeSpeed;
-
-                if (pipe.x + pipe.width < 0) {
-                    pipes.splice(i, 1);
-                    continue;
-                }
-
-                if (!pipe.passed && pipe.x < bird.x) {
-                    pipe.passed = true;
-                    score++;
-                    scoreEl.innerText = score;
-                }
-
-                if (checkCollision(bird, pipe)) setGameOver();
-            }
-        }
-
-        function checkCollision(bird, pipe) {
-            const hitbox = getHitbox(bird);
-            if (hitbox.x < pipe.x + pipe.width && hitbox.x + hitbox.width > pipe.x) {
-                if (hitbox.y < pipe.gapTop) return true;
-                if (hitbox.y + hitbox.height > pipe.bottomRectY) return true;
-            }
-            return false;
-        }
-
-        function drawBird() {
-            if (assets.bird.complete) {
-                ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
-            } else {
-                ctx.fillStyle = 'yellow';
-                ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-            }
-        }
-
-        function drawPipes() {
-            if (!assets.pipeTop) {
-                ctx.fillStyle = '#008000';
-                pipes.forEach(pipe => {
-                    ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapTop);
-                    ctx.fillRect(pipe.x, pipe.gapTop + pipe.gapHeight, pipe.width, canvas.height - (pipe.gapTop + pipe.gapHeight));
-                });
-                return;
-            }
-            pipes.forEach(pipe => {
-                ctx.drawImage(assets.pipeTop, pipe.x, pipe.topRectY, pipe.width, pipeImgHeight);
-                ctx.drawImage(assets.pipeBottom, pipe.x, pipe.bottomRectY, pipe.width, pipeImgHeight);
-            });
-        }
-
-        function drawBackground() {
-            ctx.fillStyle = '#70c5ce';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-
-            switch (gameState) {
-                case 'countdown':
-                    drawBird();
-                    drawPipes();
-                    break;
-                case 'playing':
-                    frame++;
-                    updateBird();
-                    updatePipes();
-                    drawPipes();
-                    drawBird();
-                    break;
-                case 'gameOver':
-                    drawPipes();
-                    drawBird();
-                    if (controls.enter) {
-                        document.querySelector('.game').style.display = 'none';
-                        menuContainerEl.style.display = 'block';
-                        gameState = 'menu';
-                        controls.enter = false;
-                    }
-                    break;
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        // Vision Setup with tracker nodes and non-mirrored video
-        (function setupVision() {
-            const L_SH = 11, R_SH = 12, L_WR = 15, R_WR = 16;
-            window.visionEnabled = false;
-
-            const debugCanvas = document.getElementById("debugVideoCanvas");
-            const debugCtx = debugCanvas.getContext("2d");
-
-            const visionVideo = document.createElement("video");
-            visionVideo.style.display = "none";
-            visionVideo.autoplay = true;
-            visionVideo.playsInline = true;
-            document.body.appendChild(visionVideo);
-
-            const poseDetector = new Pose({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
-            });
-
-            poseDetector.setOptions({
-                modelComplexity: 1,
-                smoothLandmarks: true,
-                enableSegmentation: false,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-
-            poseDetector.onResults(onPoseResults);
-
-            const camera = new Camera(visionVideo, {
-                onFrame: async () => await poseDetector.send({ image: visionVideo }),
-                width: 640,
-                height: 480
-            });
-            camera.start();
-
-            function onPoseResults(results) {
-                if (!results.image) return;
-
-                debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-
-                // Draw non-mirrored video
-                debugCtx.save();
-                debugCtx.scale(-1, 1);
-                debugCtx.drawImage(results.image, -debugCanvas.width, 0, debugCanvas.width, debugCanvas.height);
-                debugCtx.restore();
-
-                if (!results.poseLandmarks || !results.poseLandmarks.length) return;
-
-                const lm = results.poseLandmarks;
-
-                function drawPoint(p, color) {
-                    const x = p.x * debugCanvas.width;
-                    const y = p.y * debugCanvas.height;
-                    debugCtx.beginPath();
-                    debugCtx.arc(x, y, 5, 0, 2 * Math.PI);
-                    debugCtx.fillStyle = color;
-                    debugCtx.fill();
-                }
-
-                drawPoint(lm[L_WR], 'red');
-                drawPoint(lm[R_WR], 'red');
-
-                // Detect arm up
-                const leftWristY = lm[L_WR].y;
-                const rightWristY = lm[R_WR].y;
-                const leftShoulderY = lm[L_SH].y;
-                const rightShoulderY = lm[R_SH].y;
-                const THRESHOLD = -0.2;
-                const bothUp = (leftWristY < leftShoulderY - THRESHOLD) &&
-                                (rightWristY < rightShoulderY - THRESHOLD);
-
-                if (bothUp && window.visionEnabled && gameState === 'playing') {
-                    controls.up = true;
-                }
-            }
-        })();
-
-        function init() {
-            setupKeyboardControls();
-
-            bird = { x: canvas.width / 4, y: canvas.height / 2, width: BIRD_WIDTH, height: BIRD_HEIGHT, velocityY: 0, velocityX: 0 };
-
-            assets.bird.onload = onAssetLoad;
-            assets.pipeBottom.onload = onAssetLoad;
-            assets.bird.src = "{% static 'bird.png' %}";
-            assets.pipeBottom.src = "{% static 'pipe.png' %}";
-
-            startGameBtn.addEventListener('click', startGame);
-
-            gameLoop();
-        }
-
-        init();
-    </script>
+    init();
+</script>
 </body>
 </html>
