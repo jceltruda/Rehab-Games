@@ -303,7 +303,10 @@ window.addEventListener("keydown", (e) => {
     if (gameState === STATE.PLAYING) {
         if (key === "ArrowLeft" || key === "a" || key === "A") keys.left = true;
         if (key === "ArrowRight" || key === "d" || key === "D") keys.right = true;
-        if (key === " ") keys.space = true;
+        if (key === " ") {
+            e.preventDefault(); // Prevent button click
+            keys.space = true;
+        }
         return;
     }
 
@@ -330,6 +333,8 @@ function startNewGame() {
     score = 0;
     win = false;
     gameState = STATE.PLAYING;
+    ball.stuckToPaddle = false;
+
 }
 
 function resetGame() {
@@ -352,6 +357,12 @@ function update() {
         }
         const targetCenterX = normX * WIDTH;
         paddle.x = targetCenterX - paddle.w / 2;
+    }
+
+    // Update ball position when on START screen
+    if (gameState === STATE.START) {
+        ball.x = paddle.x + paddle.w / 2;
+        ball.y = paddle.y - ball.r - 1;
     }
 
     if (gameState === STATE.PLAYING) {
@@ -398,6 +409,20 @@ function draw() {
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     if (gameState === STATE.START) {
+        // Draw game objects in background
+        for (const b of bricks) {
+            b.draw(ctx);
+        }
+        paddle.draw(ctx);
+        ball.draw(ctx);
+        
+        // HUD
+        drawText(ctx, `Score: ${score}`, 22, COLORS.WHITE, 80, 20);
+        drawText(ctx, `Lives: ${lives}`, 22, COLORS.WHITE, WIDTH - 80, 20);
+        drawText(ctx, `Difficulty: ${difficultyLabel}`, 22, COLORS.WHITE, WIDTH / 2, 20);
+        drawText(ctx, `Hand: ${handLabel}`, 20, COLORS.WHITE, WIDTH / 2, 50);
+        
+        // Paused message
         drawText(ctx, "Press Start", 50, COLORS.WHITE, WIDTH / 2, HEIGHT / 2);
         return;
     }
@@ -479,8 +504,14 @@ function setupButtons() {
         if (gameState === STATE.START) {
             startNewGame();
         } else if (gameState === STATE.PLAYING) {
-            gameState = STATE.PAUSED;
-            gameButton.textContent = 'Resume';
+            // If ball is stuck to paddle, launch it
+            if (ball.stuckToPaddle) {
+                ball.stuckToPaddle = false;
+            } else {
+                // Otherwise pause the game
+                gameState = STATE.PAUSED;
+                gameButton.textContent = 'Resume';
+            }
         } else if (gameState === STATE.PAUSED) {
             gameState = STATE.PLAYING;
             gameButton.textContent = 'Pause';

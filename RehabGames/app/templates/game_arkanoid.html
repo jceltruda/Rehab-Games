@@ -123,6 +123,23 @@
                 flex-direction: column;
             }
         }
+
+                /* This overrides main.css to make the <p> tags match the h3 style */
+        .description-box p {
+            font-family: var(--font-modern);
+            color: var(--light-purple); /* Match h3 color */
+            font-weight: 400;
+            font-size: 1rem; /* Smaller than the h3's 1.3rem */
+            line-height: 1.6;
+            text-shadow: 0 0 5px rgba(224, 170, 255, 0.5); /* Match h3 shadow */
+            text-align: middle; /* Keep left-aligned for readability */
+        }
+        
+        /* This makes the <strong> tags pop more against the new text color */
+        .description-box p strong {
+            color: var(--light-purple);
+            text-shadow: 0 0 5px rgba(150, 0, 150, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -130,17 +147,19 @@
     <div class="home-container">
         <div class="info-column">
             <h1>Arkanoid</h1>
-            <h2>Control the paddle using arm movement.</h2>
+            <h2 style = "color: var(--neon-cyan)">Move your arm left-to-right to control the paddle.</h2>
 
             <div class="description-box">
+                <h3 style="font-family: var(--font-modern); color: var(--light-purple); font-weight: 400; font-size: 1.3rem; line-height: 1.6; margin-top: 0; margin-bottom: 4rem; text-shadow: 0 0 5px rgba(224, 170, 255, 0.5); text-align: center;">
+                Therapy Focus: Horizontal Shoulder Mobility
                 <p>
-                    This game helps build upper-body mobility  
-                    using left or right arm movement to guide the paddle.
+                    This exercise trains Shoulder Abduction and Adduction (the side-to-side motion of your arm).
                 </p>
                 <p>
-                    Select your difficulty and hand preference using the buttons below.
+                    This movement is vital for building strength in your deltoid and rotator cuff, helping with daily tasks like reaching across your body or putting on a seatbelt.
                 </p>
-                </br>
+                </h3>
+                <br>
             </div>
 
             <button type="button" id="startGameBtn" class="cta-button">
