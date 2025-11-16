@@ -5,12 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const easyBtn = document.getElementById('easyBtn');
     const mediumBtn = document.getElementById('mediumBtn');
     const hardBtn = document.getElementById('hardBtn');
+    mediumBtn.classList.add('active-difficulty');
 
     // --- Difficulty Settings ---
     const difficultySettings = {
         EASY: {
             ballSpeed: 4,
-            aiReaction: 0.03 // Slower AI
+            aiReaction: 0.03 // Slower AI   
         },
         MEDIUM: {
             ballSpeed: 6,
@@ -66,6 +67,22 @@ document.addEventListener('DOMContentLoaded', () => {
     hardBtn.addEventListener('click', () => setDifficulty('HARD'));
 
     function setDifficulty(difficulty) {
+        // --- ADD THIS BLOCK ---
+        // 1. Remove active class from all buttons
+        easyBtn.classList.remove('active-difficulty');
+        mediumBtn.classList.remove('active-difficulty');
+        hardBtn.classList.remove('active-difficulty');
+
+        // 2. Add active class to the selected button
+        if (difficulty === 'EASY') {
+            easyBtn.classList.add('active-difficulty');
+        } else if (difficulty === 'MEDIUM') {
+            mediumBtn.classList.add('active-difficulty');
+        } else if (difficulty === 'HARD') {
+            hardBtn.classList.add('active-difficulty');
+        }
+        // --- END OF NEW BLOCK ---
+
         currentSettings = difficultySettings[difficulty];
         playerPaddle.score = 0;
         aiPaddle.score = 0;
