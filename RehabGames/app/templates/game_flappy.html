@@ -22,8 +22,8 @@
         }
 
         .difficulty-btn.selected {
-            background-color: #4CAF50;
-            color: white;
+            background-color: var(--neon-cyan);
+            color: var(--dark-bg);
         }
 
         /* NEW LAYOUT CHANGES */
@@ -139,9 +139,9 @@
                 <div class="game-controls">
                     <button id="startGameBtn2">Start</button>
                     <div class="difficulty-controls">
-                        <button id="easyBtn">Easy</button>
-                        <button id="mediumBtn">Medium</button>
-                        <button id="hardBtn">Hard</button>
+                        <button class="difficulty-btn" data-difficulty="Easy" id="easyBtn">Easy</button>
+                        <button class="difficulty-btn" data-difficulty="Medium" id="mediumBtn">Medium</button>
+                        <button class="difficulty-btn" data-difficulty="Hard" id="hardBtn">Hard</button>
                     </div>
                 </div>
 
@@ -191,7 +191,7 @@
     const HITBOX_Y_SHRINK = 54;
 
     const DIFFICULTY_LEVELS = {
-        'Easy': { 'PIPE_GAP': 300, 'PIPE_SPEED': 1.0, 'PIPE_SPACING': 200, 'GRAVITY': 0.045, 'FLAP_STRENGTH': -3.0, 'HORIZONTAL_SPEED': 2.0 },
+        'Easy': { 'PIPE_GAP': 300, 'PIPE_SPEED': 1.0, 'PIPE_SPACING': 200, 'GRAVITY': 0.045, 'FLAP_STRENGTH': -2.0, 'HORIZONTAL_SPEED': 2.0 },
         'Medium': { 'PIPE_GAP': 250, 'PIPE_SPEED': 1.5, 'PIPE_SPACING': 180, 'GRAVITY': 0.06, 'FLAP_STRENGTH': -3.2, 'HORIZONTAL_SPEED': 2.5 },
         'Hard': { 'PIPE_GAP': 200, 'PIPE_SPEED': 2.0, 'PIPE_SPACING': 150, 'GRAVITY': 0.08, 'FLAP_STRENGTH': -3.5, 'HORIZONTAL_SPEED': 3.0 }
     };
@@ -580,5 +580,6 @@
 </script>
 </body>
 </html>
+
 
 
