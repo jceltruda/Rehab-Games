@@ -124,6 +124,7 @@
     let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
     let gameGravity, gameFlapStrength, gameHorizontalSpeed;
     let bird, pipes, score, frame, gameState;
+    let scoreSubmitted = false;
 
     const assets = {
         bird: new Image(),
@@ -179,7 +180,34 @@
         assets.pipeTop = topCanvas;
     }
 
+    async function submitScoreToServer(score) {
+        try {
+            const resp = await fetch("/submit_score/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    player: "Guest",           // or wire a real name later
+                    game: "shoulder-bird",            // must match your Django GAME_CHOICES
+                    score: score,
+                    difficulty: selectedDifficulty, // "Easy" / "Medium" / "Hard"
+                }),
+            });
+
+            if (!resp.ok) {
+                console.error("Flappy score submit failed:", resp.status, await resp.text());
+            } else {
+                console.log("Flappy score submitted!");
+            }
+        } catch (err) {
+            console.error("Error submitting flappy score:", err);
+        }
+    }
+
     function setGameOver() {
+        if (!scoreSubmitted) {
+            scoreSubmitted = true;
+            submitScoreToServer(score);
+        }
         gameState = 'gameOver';
         gameOverScoreEl.innerText = `Score: ${score}`;
         gameOverContainerEl.style.display = 'block';
@@ -202,6 +230,7 @@
         score = 0;
         frame = 0;
         scoreEl.innerText = score;
+        scoreSubmitted = false;
 
         gameState = 'countdown';
         menuContainerEl.style.display='none';
