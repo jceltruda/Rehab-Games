@@ -9,777 +9,372 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
-
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f8ff; 
-            color: #333;
-        }
-        h1 {
-            color: #4682b4; 
-        }
-
-        .main-row {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
-
-        .game-container {
-            position: relative;
-            width: 400px; 
-            height: 600px; 
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1), 0 6px 6px rgba(0,0,0,0.15);
-        }
-        canvas {
-            display: block;
-            background-color: #70c5ce; 
-            border-radius: 8px;
-        }
-        #ui-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            pointer-events: none; 
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-        }
+        /* Ensure score is visible above canvas */
         #score {
             position: absolute;
-            top: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 48px;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: white;
             z-index: 10;
         }
-        .message-box {
-            display: none;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 10px;
-            pointer-events: all; 
-        }
-        .message-box h2 {
-            margin-top: 0;
-            font-size: 2.5rem;
-        }
-        .message-box p {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-        }
-        .difficulty-option {
-            font-size: 1.8rem;
-            padding: 10px;
-            margin: 5px 0;
-            border-radius: 5px;
-            border: 2px solid transparent;
-            cursor: pointer;
-        }
-        .difficulty-option.selected {
-            background-color: #FFD700; 
-            color: #333;
-            text-shadow: none;
-        }
-        .instructions {
-            font-size: 1rem;
-            margin-top: 20px;
-        }
 
-        #debugPanel {
-            width: 400px;
-            height: 600px;
-            border-radius: 8px;
-            background: #111;
-            color: #fff;
-            padding: 8px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            box-sizing: border-box;
-        }
-        #debugVideoCanvas {
-            width: 100%;
-            height: auto;
-            background: black;
-            border-radius: 4px;
-            display: block;
-        }
-        #debugInfo {
-            margin-top: 8px;
-            font-family: monospace;
-            font-size: 14px;
-            white-space: pre;
-        }
-
-        #countdownOverlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 80px;
-            font-weight: bold;
+        .difficulty-btn.selected {
+            background-color: #4CAF50;
             color: white;
-            text-shadow: 3px 3px 8px black;
-            display: none;
-            z-index: 9999;
-            pointer-events: none;
         }
-        .retro-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            padding: 12px 20px;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 14px;
-            color: #fff;
-            background-color: #ff5722;
-            border: 3px solid #000;
-            border-radius: 4px;
-            text-decoration: none;
-            text-transform: uppercase;
-            box-shadow: 4px 4px 0 #000;
-            transition: all 0.1s ease-in-out;
-            z-index: 1000;
-        }
-
-        .retro-button:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0 #000;
-            background-color: #ff7043;
-        }
-
-        .retro-button:active {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0 #000;
-            background-color: #e64a19;
-        }
-
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
     </style>
 </head>
-<body>
-    <a href="{% url 'game_select' %}" class="retro-button">Return to Game Select</a>
 
-    <h1>Shoulder-Bird Rehab</h1>
+<body>
+    <h1>Flappy Bird Rehab</h1>
 
     <div class="main-row">
         <div class="game-container">
-            <canvas id="gameCanvas" width="400" height="600"></canvas>
-            <div id="ui-layer">
-                <div id="score">0</div>
-
-                <div id="menu-container" class="message-box">
-                    <h2 id="menu-title">Shoulder-Bird</h2>
-                    <p id="menu-status">Loading assets...</p>
-                    <div id="difficulty-list"></div>
-                    <p classid="instructions" id="menu-instructions" style="display: none;">Use UP/DOWN to select<br/>Press ENTER to start</p>
+            <div id="menu-container" class="message-box">
+                <h2>Control the flaps with your arms</h2>
+                <div class="description-box">
+                    <p>A classic arcade game to help with arm mobility.</p>
+                    <p>You will select a difficulty before starting the game.</p>
                 </div>
 
-                <div id="game-over-container" class="message-box">
-                    <h2 id="game-over-title">Game Over</h2>
-                    <p id="game-over-score">Score: 0</p>
-                    <p class="instructions">Press ENTER to return to menu</p>
+                <div id="difficulty-buttons">
+                    <button class="difficulty-btn" data-difficulty="Easy">Easy</button>
+                    <button class="difficulty-btn" data-difficulty="Medium">Medium</button>
+                    <button class="difficulty-btn" data-difficulty="Hard">Hard</button>
                 </div>
+
+                <button style="margin-top: 15px;" type="button" id="startGameBtn" class="cta-button">
+                    Start Game
+                </button>
             </div>
 
-            <div id="countdownOverlay">3</div>
+            <div class="game" style="display: none; position: relative;">
+                <canvas id="gameCanvas" width="400" height="600"></canvas>
+                <div id="ui-layer">
+                    <div id="score">0</div>
+                    <div id="game-over-container" class="message-box">
+                        <h2 id="game-over-title">Game Over</h2>
+                        <p id="game-over-score">Score: 0</p>
+                        <p class="instructions">Press ENTER to return to menu</p>
+                    </div>
+                </div>
+                <div id="countdownOverlay" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:64px; color:white;">3</div>
+            </div>  
         </div>
 
-        <div id="debugPanel">
-            <canvas id="debugVideoCanvas" width="400" height="600"></canvas>
-            <div id="debugInfo">Initializing camera...</div>
+        <div class="webcam-section">
+            <label style="margin-bottom: 20px" class="webcam-toggle">
+                <input type="checkbox" id="toggleWebcam" checked>
+                Show camera preview
+            </label>
+            <div id="webcamContainer">
+                <div id="debugPanel">
+                    <canvas id="debugVideoCanvas" width="400" height="300"></canvas>
+                </div>
+            </div>
         </div>
+
+        <a href="{% url 'game_select' %}" class="back-link">← Back to Game Select</a>
     </div>
 
-    <p>Use <b>Arrow Keys</b> to move horizontally. Vertical (UP/DOWN) uses vision (raise both arms).</p>
+<script>
+    // ----- Setup -----
+    const toggleCheckbox = document.getElementById('toggleWebcam');
+    const webcamContainer = document.getElementById('webcamContainer');
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    toggleCheckbox.addEventListener('change', () => {
+        webcamContainer.style.display = toggleCheckbox.checked ? 'flex' : 'none';
+    });
 
-        const scoreEl = document.getElementById('score');
-        const menuContainerEl = document.getElementById('menu-container');
-        const menuStatusEl = document.getElementById('menu-status');
-        const difficultyListEl = document.getElementById('difficulty-list');
-        const menuInstructionsEl = document.getElementById('menu-instructions');
-        const gameOverContainerEl = document.getElementById('game-over-container');
-        const gameOverScoreEl = document.getElementById('game-over-score');
-        const countdownOverlay = document.getElementById('countdownOverlay');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-        const BIRD_WIDTH = 95;
-        const BIRD_HEIGHT = 95;
-        const FAST_FALL_STRENGTH = 1.5; 
-        const PIPE_WIDTH = 80;
+    const scoreEl = document.getElementById('score');
+    const menuContainerEl = document.getElementById('menu-container');
+    const gameOverContainerEl = document.getElementById('game-over-container');
+    const gameOverScoreEl = document.getElementById('game-over-score');
+    const countdownOverlay = document.getElementById('countdownOverlay');
+    const startGameBtn = document.getElementById('startGameBtn');
 
-        const HITBOX_X_SHRINK = 40;
-        const HITBOX_Y_SHRINK = 54;
+    const BIRD_WIDTH = 95;
+    const BIRD_HEIGHT = 95;
+    const FAST_FALL_STRENGTH = 1.5; 
+    const PIPE_WIDTH = 80;
+    const HITBOX_X_SHRINK = 40;
+    const HITBOX_Y_SHRINK = 54;
 
-        const DIFFICULTY_LEVELS = {
-            'Easy': {
-                'PIPE_GAP': 300,          
-                'PIPE_SPEED': 1.0,        
-                'PIPE_SPACING': 200,      
-                'GRAVITY': 0.045,         
-                'FLAP_STRENGTH': -3.0,    
-                'HORIZONTAL_SPEED': 2.0
-            },
-            'Medium': {
-                'PIPE_GAP': 250,
-                'PIPE_SPEED': 1.4,
-                'PIPE_SPACING': 170,
-                'GRAVITY': 0.06,
-                'FLAP_STRENGTH': -3.8,   
-                'HORIZONTAL_SPEED': 2.5
-            },
-            'Hard': {
-                'PIPE_GAP': 200,
-                'PIPE_SPEED': 1.7,
-                'PIPE_SPACING': 140,
-                'GRAVITY': 0.09,
-                'FLAP_STRENGTH': -4.2,   
-                'HORIZONTAL_SPEED': 3.0
+    const DIFFICULTY_LEVELS = {
+        'Easy': { 'PIPE_GAP': 300, 'PIPE_SPEED': 1.0, 'PIPE_SPACING': 200, 'GRAVITY': 0.045, 'FLAP_STRENGTH': -3.0, 'HORIZONTAL_SPEED': 2.0 },
+        'Medium': { 'PIPE_GAP': 250, 'PIPE_SPEED': 1.5, 'PIPE_SPACING': 180, 'GRAVITY': 0.06, 'FLAP_STRENGTH': -3.2, 'HORIZONTAL_SPEED': 2.5 },
+        'Hard': { 'PIPE_GAP': 200, 'PIPE_SPEED': 2.0, 'PIPE_SPACING': 150, 'GRAVITY': 0.08, 'FLAP_STRENGTH': -3.5, 'HORIZONTAL_SPEED': 3.0 }
+    };
+
+    let selectedDifficulty = 'Easy';
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            selectedDifficulty = btn.dataset.difficulty;
+            document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        });
+    });
+
+    let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
+    let gameGravity, gameFlapStrength, gameHorizontalSpeed;
+    let bird, pipes, score, frame, gameState;
+
+    const assets = {
+        bird: new Image(),
+        pipeBottom: new Image(),
+        pipeTop: null
+    };
+    let pipeImgHeight = 500; 
+    let assetsLoaded = 0;
+    const totalAssets = 2;
+
+    const controls = { up:false, down:false, left:false, right:false, enter:false };
+
+    // ----- Keyboard -----
+    function setupKeyboardControls() {
+        window.addEventListener('keydown', e => {
+            if(e.key==='ArrowUp') controls.up=true;
+            if(e.key==='ArrowDown') controls.down=true;
+            if(e.key==='ArrowLeft') controls.left=true;
+            if(e.key==='ArrowRight') controls.right=true;
+            if(e.key==='Enter') controls.enter=true;
+        });
+        window.addEventListener('keyup', e => {
+            if(e.key==='ArrowUp') controls.up=false;
+            if(e.key==='ArrowDown') controls.down=false;
+            if(e.key==='ArrowLeft') controls.left=false;
+            if(e.key==='ArrowRight') controls.right=false;
+            if(e.key==='Enter') controls.enter=false;
+        });
+    }
+
+    function onAssetLoad() {
+        assetsLoaded++;
+        if (assetsLoaded === totalAssets) preparePipeImages();
+    }
+
+    function preparePipeImages() {
+        const scaleFactor = PIPE_WIDTH / assets.pipeBottom.width;
+        pipeImgHeight = Math.floor(assets.pipeBottom.height * scaleFactor);
+
+        const bottomCanvas = document.createElement('canvas');
+        bottomCanvas.width = PIPE_WIDTH;
+        bottomCanvas.height = pipeImgHeight;
+        bottomCanvas.getContext('2d').drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
+        assets.pipeBottom = bottomCanvas;
+
+        const topCanvas = document.createElement('canvas');
+        topCanvas.width = PIPE_WIDTH;
+        topCanvas.height = pipeImgHeight;
+        const topCtx = topCanvas.getContext('2d');
+        topCtx.translate(0, pipeImgHeight);
+        topCtx.scale(1, -1);
+        topCtx.drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
+        assets.pipeTop = topCanvas;
+    }
+
+    function setGameOver() {
+        gameState = 'gameOver';
+        gameOverScoreEl.innerText = `Score: ${score}`;
+        gameOverContainerEl.style.display = 'block';
+    }
+
+    function startGame() {
+        if(assetsLoaded < totalAssets) { alert("Assets still loading!"); return; }
+
+        const diff = selectedDifficulty;
+        gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
+        gamePipeSpeed = DIFFICULTY_LEVELS[diff]['PIPE_SPEED'];
+        gamePipeSpacing = DIFFICULTY_LEVELS[diff]['PIPE_SPACING'];
+        gameGravity = DIFFICULTY_LEVELS[diff]['GRAVITY'];
+        gameFlapStrength = DIFFICULTY_LEVELS[diff]['FLAP_STRENGTH'];
+        gameHorizontalSpeed = DIFFICULTY_LEVELS[diff]['HORIZONTAL_SPEED'];
+
+        bird = { x: canvas.width/4, y: canvas.height/2, width: BIRD_WIDTH, height: BIRD_HEIGHT, velocityY:0, velocityX:0 };
+        pipes = [];
+        spawnPipe(); // Spawn first pipe immediately
+        score = 0;
+        frame = 0;
+        scoreEl.innerText = score;
+
+        gameState = 'countdown';
+        menuContainerEl.style.display='none';
+        gameOverContainerEl.style.display='none';
+        document.querySelector('.game').style.display='block';
+        scoreEl.style.display='block';
+
+        window.visionEnabled=false;
+        countdownOverlay.style.display='block';
+        countdownOverlay.innerText = "3";
+        let countdown = 3;
+        const countdownTimer = setInterval(()=>{
+            countdown--;
+            if(countdown>0) countdownOverlay.innerText=String(countdown);
+            else {
+                clearInterval(countdownTimer);
+                countdownOverlay.style.display='none';
+                window.visionEnabled=true;
+                gameState='playing';
             }
-        };
+        },1000);
+    }
 
-        const DIFFICULTY_NAMES = ['Easy', 'Medium', 'Hard'];
+    function spawnPipe() {
+        const gapTop = Math.random()*(canvas.height - gamePipeGap - 100) + 50;
+        pipes.push({
+            x: canvas.width,
+            width: PIPE_WIDTH,
+            gapTop: gapTop,
+            gapHeight: gamePipeGap,
+            passed:false
+        });
+    }
 
-        let gamePipeGap, gamePipeSpeed, gamePipeSpacing;
-        let gameGravity, gameFlapStrength, gameHorizontalSpeed;
+    function getHitbox(bird) {
+        const dx = HITBOX_X_SHRINK/2;
+        const dy = HITBOX_Y_SHRINK/2;
+        return { x: bird.x+dx, y:bird.y+dy, width: bird.width-HITBOX_X_SHRINK, height: bird.height-HITBOX_Y_SHRINK };
+    }
 
-        let bird, pipes, score, frame, gameState;
-        let selectedDifficultyIndex = 0;
+    function updateBird() {
+        bird.velocityY += gameGravity;
+        if(controls.up) { bird.velocityY=gameFlapStrength; controls.up=false; }
+        if(controls.down) bird.velocityY+=FAST_FALL_STRENGTH;
+        bird.velocityX=0;
+        if(controls.left) bird.velocityX=-gameHorizontalSpeed;
+        if(controls.right) bird.velocityX=gameHorizontalSpeed;
 
-        const assets = {
-            bird: new Image(),
-            pipeBottom: new Image(),
-            pipeTop: null 
-        };
-        let pipeImgHeight = 500; 
-        let assetsLoaded = 0;
-        const totalAssets = 2; 
+        bird.y+=bird.velocityY;
+        bird.x+=bird.velocityX;
 
-        const controls = {
-            up: false,
-            down: false,
-            left: false,
-            right: false,
-            enter: false
-        };
+        if(bird.x<0) bird.x=0;
+        if(bird.x+bird.width>canvas.width) bird.x=canvas.width-bird.width;
 
-        function setupKeyboardControls() {
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowUp') controls.up = true;
-                if (e.key === 'ArrowDown') controls.down = true;
-                if (e.key === 'ArrowLeft') controls.left = true;
-                if (e.key === 'ArrowRight') controls.right = true;
-                if (e.key === 'Enter') controls.enter = true;
-            });
+        const hitbox = getHitbox(bird);
+        if(hitbox.y + hitbox.height > canvas.height || hitbox.y<0) setGameOver();
+    }
 
-            window.addEventListener('keyup', (e) => {
-                if (e.key === 'ArrowUp') controls.up = false;
-                if (e.key === 'ArrowDown') controls.down = false;
-                if (e.key === 'ArrowLeft') controls.left = false;
-                if (e.key === 'ArrowRight') controls.right = false;
-                if (e.key === 'Enter') controls.enter = false;
-            });
+    function updatePipes() {
+        if(frame % gamePipeSpacing ===0) spawnPipe();
 
-            difficultyListEl.addEventListener('click', (e) => {
-                if (e.target.classList.contains('difficulty-option')) {
-                    selectedDifficultyIndex = parseInt(e.target.dataset.index);
-                    updateMenuSelection();
-                    startGame();
+        for(let i=pipes.length-1;i>=0;i--){
+            const pipe=pipes[i];
+            pipe.x-=gamePipeSpeed;
+
+            if(pipe.x+pipe.width<0){ pipes.splice(i,1); continue; }
+
+            if(!pipe.passed && pipe.x<bird.x){ pipe.passed=true; score++; scoreEl.innerText=score; }
+
+            if(checkCollision(bird,pipe)) setGameOver();
+        }
+    }
+
+    function checkCollision(bird,pipe){
+        const hitbox=getHitbox(bird);
+        if(hitbox.x < pipe.x + pipe.width && hitbox.x + hitbox.width > pipe.x){
+            if(hitbox.y < pipe.gapTop) return true;
+            if(hitbox.y + hitbox.height > pipe.gapTop + pipe.gapHeight) return true;
+        }
+        return false;
+    }
+
+    function drawBird(){
+        if(assets.bird.complete) ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
+        else { ctx.fillStyle='yellow'; ctx.fillRect(bird.x,bird.y,bird.width,bird.height); }
+    }
+
+    function drawPipes(){
+        pipes.forEach(pipe=>{
+            if(assets.pipeTop){
+                ctx.drawImage(assets.pipeTop, pipe.x, pipe.gapTop - pipeImgHeight, pipe.width, pipeImgHeight);
+                ctx.drawImage(assets.pipeBottom, pipe.x, pipe.gapTop + pipe.gapHeight, pipe.width, pipeImgHeight);
+            }else{
+                ctx.fillStyle='#008000';
+                ctx.fillRect(pipe.x,0,pipe.width,pipe.gapTop);
+                ctx.fillRect(pipe.x,pipe.gapTop+pipe.gapHeight,pipe.width,canvas.height-(pipe.gapTop+pipe.gapHeight));
+            }
+        });
+    }
+
+    function drawBackground(){
+        ctx.fillStyle='#70c5ce';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+    }
+
+    function gameLoop(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        drawBackground();
+
+        switch(gameState){
+            case 'countdown':
+                drawBird(); drawPipes(); break;
+            case 'playing':
+                frame++; updateBird(); updatePipes(); drawPipes(); drawBird(); break;
+            case 'gameOver':
+                drawPipes(); drawBird();
+                if(controls.enter){
+                    document.querySelector('.game').style.display='none';
+                    menuContainerEl.style.display='block';
+                    gameState='menu';
+                    controls.enter=false;
                 }
-            });
+                break;
         }
+        requestAnimationFrame(gameLoop);
+    }
 
-        function onAssetLoad() {
-            assetsLoaded++;
-            if (assetsLoaded === totalAssets) {
-                preparePipeImages();
+    // ----- Vision Setup (simplified) -----
+    (function setupVision(){
+        const L_WR=15,R_WR=16,L_SH=11,R_SH=12;
+        window.visionEnabled=false;
+        const debugCanvas=document.getElementById("debugVideoCanvas");
+        const debugCtx=debugCanvas.getContext("2d");
+        const visionVideo=document.createElement("video");
+        visionVideo.style.display="none"; visionVideo.autoplay=true; visionVideo.playsInline=true;
+        document.body.appendChild(visionVideo);
 
-                menuStatusEl.innerText = 'Select Difficulty:';
-                menuInstructionsEl.style.display = 'block';
-                updateMenuSelection();
-            }
+        const poseDetector=new Pose({ locateFile:(file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}` });
+        poseDetector.setOptions({ modelComplexity:1, smoothLandmarks:true, enableSegmentation:false, minDetectionConfidence:0.5, minTrackingConfidence:0.5 });
+        poseDetector.onResults(onPoseResults);
+        new Camera(visionVideo,{ onFrame: async()=>await poseDetector.send({image:visionVideo}), width:640,height:480 }).start();
+
+        function onPoseResults(results){
+            if(!results.image) return;
+            debugCtx.clearRect(0,0,debugCanvas.width,debugCanvas.height);
+            debugCtx.save(); debugCtx.scale(-1,1); debugCtx.drawImage(results.image,-debugCanvas.width,0,debugCanvas.width,debugCanvas.height); debugCtx.restore();
+            if(!results.poseLandmarks?.length) return;
+            const lm=results.poseLandmarks;
+            function drawPoint(p,color){ const x=p.x*debugCanvas.width; const y=p.y*debugCanvas.height; debugCtx.beginPath(); debugCtx.arc(x,y,5,0,2*Math.PI); debugCtx.fillStyle=color; debugCtx.fill(); }
+            drawPoint(lm[L_WR],'red'); drawPoint(lm[R_WR],'red');
+
+            const leftWristY=lm[L_WR].y,rightWristY=lm[R_WR].y;
+            const leftShoulderY=lm[L_SH].y,rightShoulderY=lm[R_SH].y;
+            const THRESHOLD=-0.2;
+            const bothUp=(leftWristY<leftShoulderY-THRESHOLD)&&(rightWristY<rightShoulderY-THRESHOLD);
+            if(bothUp && window.visionEnabled && gameState==='playing') controls.up=true;
         }
-
-        function preparePipeImages() {
-            const originalWidth = assets.pipeBottom.width;
-            const originalHeight = assets.pipeBottom.height;
-            const scaleFactor = PIPE_WIDTH / originalWidth;
-            pipeImgHeight = Math.floor(originalHeight * scaleFactor);
-
-            const bottomCanvas = document.createElement('canvas');
-            bottomCanvas.width = PIPE_WIDTH;
-            bottomCanvas.height = pipeImgHeight;
-            bottomCanvas.getContext('2d').drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
-            assets.pipeBottom = bottomCanvas;
-
-            const topCanvas = document.createElement('canvas');
-            topCanvas.width = PIPE_WIDTH;
-            topCanvas.height = pipeImgHeight;
-            const topCtx = topCanvas.getContext('2d');
-
-            topCtx.translate(0, pipeImgHeight);
-            topCtx.scale(1, -1);
-            topCtx.drawImage(assets.pipeBottom, 0, 0, PIPE_WIDTH, pipeImgHeight);
-
-            assets.pipeTop = topCanvas;
-        }
-
-        function showMenu() {
-            gameState = 'menu';
-            gameOverContainerEl.style.display = 'none';
-            scoreEl.style.display = 'none';
-            menuContainerEl.style.display = 'block';
-
-            if (assetsLoaded === totalAssets) {
-                menuStatusEl.innerText = 'Select Difficulty:';
-                menuInstructionsEl.style.display = 'block';
-                updateMenuSelection();
-            }
-        }
-
-        function updateMenuSelection() {
-            difficultyListEl.innerHTML = '';
-            DIFFICULTY_NAMES.forEach((name, index) => {
-                const option = document.createElement('div');
-                option.className = 'difficulty-option';
-                option.innerText = name;
-                option.dataset.index = index;
-                if (index === selectedDifficultyIndex) {
-                    option.classList.add('selected');
-                }
-                difficultyListEl.appendChild(option);
-            });
-        }
-
-        function setGameOver() {
-            gameState = 'gameOver';
-            gameOverScoreEl.innerText = `Score: ${score}`;
-            gameOverContainerEl.style.display = 'block';
-        }
-
-        function startGame() {
-            const diff = DIFFICULTY_NAMES[selectedDifficultyIndex];
-            gamePipeGap = DIFFICULTY_LEVELS[diff]['PIPE_GAP'];
-            gamePipeSpeed = DIFFICULTY_LEVELS[diff]['PIPE_SPEED'];
-            gamePipeSpacing = DIFFICULTY_LEVELS[diff]['PIPE_SPACING'];
-            gameGravity = DIFFICULTY_LEVELS[diff]['GRAVITY'];
-            gameFlapStrength = DIFFICULTY_LEVELS[diff]['FLAP_STRENGTH'];
-            gameHorizontalSpeed = DIFFICULTY_LEVELS[diff]['HORIZONTAL_SPEED'];
-
-            bird = {
-                x: canvas.width / 4,
-                y: canvas.height / 2,
-                width: BIRD_WIDTH,
-                height: BIRD_HEIGHT,
-                velocityY: 0,
-                velocityX: 0
-            };
-            pipes = [];
-            score = 0;
-            frame = 0;
-            scoreEl.innerText = score;
-
-            gameState = 'countdown';
-            menuContainerEl.style.display = 'none';
-            gameOverContainerEl.style.display = 'none';
-            scoreEl.style.display = 'block';
-
-            window.visionEnabled = false; 
-            countdownOverlay.style.display = 'block';
-            countdownOverlay.innerText = "3";
-            let countdown = 3;
-            const countdownTimer = setInterval(() => {
-                countdown--;
-                if (countdown > 0) {
-                    countdownOverlay.innerText = String(countdown);
-                } else {
-                    clearInterval(countdownTimer);
-                    countdownOverlay.style.display = 'none';
-                    window.visionEnabled = true;
-                    gameState = 'playing';
-                }
-            }, 1000);
-        }
-
-        function spawnPipe() {
-            const gapTop = Math.random() * (canvas.height - gamePipeGap - 100) + 50;
-            const gapEnd = gapTop + gamePipeGap;
-
-            pipes.push({
-                x: canvas.width,
-                width: PIPE_WIDTH,
-                gapTop: gapTop,
-                gapHeight: gamePipeGap,
-                topRectY: gapTop - pipeImgHeight,
-                bottomRectY: gapEnd,
-                passed: false
-            });
-        }
-
-        function getHitbox(bird) {
-            const dx = HITBOX_X_SHRINK / 2;
-            const dy = HITBOX_Y_SHRINK / 2;
-            return {
-                x: bird.x + dx,
-                y: bird.y + dy,
-                width: bird.width - HITBOX_X_SHRINK,
-                height: bird.height - HITBOX_Y_SHRINK
-            };
-        }
-
-        function updateBird() {
-            bird.velocityY += gameGravity;
-
-            if (controls.up) {
-                bird.velocityY = gameFlapStrength;
-                controls.up = false;
-            }
-            if (controls.down) {
-                bird.velocityY += FAST_FALL_STRENGTH;
-            }
-
-            bird.velocityX = 0;
-            if (controls.left) {
-                bird.velocityX = -gameHorizontalSpeed;
-            }
-            if (controls.right) {
-                bird.velocityX = gameHorizontalSpeed;
-            }
-
-            bird.y += bird.velocityY;
-            bird.x += bird.velocityX;
-
-            if (bird.x < 0) bird.x = 0;
-            if (bird.x + bird.width > canvas.width) bird.x = canvas.width - bird.width;
-
-            const hitbox = getHitbox(bird);
-            if (hitbox.y + hitbox.height > canvas.height || hitbox.y < 0) {
-                setGameOver();
-            }
-        }
-
-        function updatePipes() {
-            if (frame % gamePipeSpacing === 0) {
-                spawnPipe();
-            }
-
-            for (let i = pipes.length - 1; i >= 0; i--) {
-                const pipe = pipes[i];
-                pipe.x -= gamePipeSpeed;
-
-                if (pipe.x + pipe.width < 0) {
-                    pipes.splice(i, 1);
-                    continue;
-                }
-
-                if (!pipe.passed && pipe.x < bird.x) {
-                    pipe.passed = true;
-                    score++;
-                    scoreEl.innerText = score;
-                }
-
-                if (checkCollision(bird, pipe)) {
-                    setGameOver();
-                }
-            }
-        }
-
-        function checkCollision(bird, pipe) {
-            const hitbox = getHitbox(bird);
-
-            if (hitbox.x < pipe.x + pipe.width && hitbox.x + hitbox.width > pipe.x) {
-                if (hitbox.y < pipe.gapTop) {
-                    return true;
-                }
-                if (hitbox.y + hitbox.height > pipe.bottomRectY) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-
-        function drawBird() {
-            if (assets.bird.complete) {
-                ctx.drawImage(assets.bird, bird.x, bird.y, bird.width, bird.height);
-            } else {
-                ctx.fillStyle = 'yellow';
-                ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-            }
-        }
-
-        function drawPipes() {
-            if (!assets.pipeTop) {
-                ctx.fillStyle = '#008000';
-                pipes.forEach(pipe => {
-                    ctx.fillRect(pipe.x, 0, pipe.width, pipe.gapTop);
-                    ctx.fillRect(pipe.x, pipe.gapTop + pipe.gapHeight, pipe.width, canvas.height - (pipe.gapTop + pipe.gapHeight));
-                });
-                return;
-            }
-
-            pipes.forEach(pipe => {
-                ctx.drawImage(assets.pipeTop, pipe.x, pipe.topRectY, pipe.width, pipeImgHeight);
-                ctx.drawImage(assets.pipeBottom, pipe.x, pipe.bottomRectY, pipe.width, pipeImgHeight);
-            });
-        }
-
-        function drawBackground() {
-            ctx.fillStyle = '#70c5ce';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
-
-
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-
-            switch (gameState) {
-                case 'menu':
-                    drawBird(); 
-                    if (assetsLoaded === totalAssets) {
-                        if (controls.up) {
-                            selectedDifficultyIndex = (selectedDifficultyIndex - 1 + DIFFICULTY_NAMES.length) % DIFFICULTY_NAMES.length;
-                            updateMenuSelection();
-                            controls.up = false; 
-                        }
-                        if (controls.down) {
-                            selectedDifficultyIndex = (selectedDifficultyIndex + 1) % DIFFICULTY_NAMES.length;
-                            updateMenuSelection();
-                            controls.down = false; 
-                        }
-                        if (controls.enter) {
-                            startGame();
-                            controls.enter = false; 
-                        }
-                    }
-                    break;
-
-                case 'countdown':
-                    drawBird();
-                    drawPipes();
-                    break;
-
-                case 'playing':
-                    frame++;
-                    updateBird();
-                    updatePipes();
-                    drawPipes();
-                    drawBird();
-                    break;
-
-                case 'gameOver':
-                    drawPipes();
-                    drawBird();
-                    if (controls.enter) {
-                        showMenu();
-                        controls.enter = false;
-                    }
-                    break;
-            }
-
-            requestAnimationFrame(gameLoop);
-        }
-
-        (function setupVision() {
-            const HOLD_FRAMES = 5;       
-            const COOLDOWN_MS = 300;     
-            const THRESHOLD_OFFSET = 0;  
-            const THRESHOLD = -0.2;      
-
-            const L_SH = 11, R_SH = 12, L_EL = 13, R_EL = 14, L_WR = 15, R_WR = 16;
-
-            let lastArmState = "unknown"; 
-            let consecutiveFrames = 0;
-            let lastTriggerTime = 0;
-
-            window.visionEnabled = false;
-
-            const debugCanvas = document.getElementById("debugVideoCanvas");
-            const debugCtx = debugCanvas.getContext("2d");
-            const debugInfo = document.getElementById("debugInfo");
-
-            const visionVideo = document.createElement("video");
-            visionVideo.style.display = "none";
-            visionVideo.autoplay = true;
-            visionVideo.playsInline = true;
-            document.body.appendChild(visionVideo);
-
-            const poseDetector = new Pose({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`
-            });
-
-            poseDetector.setOptions({
-                modelComplexity: 1,
-                smoothLandmarks: true,
-                enableSegmentation: false,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-
-            poseDetector.onResults(onPoseResults);
-
-            let camera;
-            try {
-                camera = new Camera(visionVideo, {
-                    onFrame: async () => {
-                        await poseDetector.send({ image: visionVideo });
-                    },
-                    width: 640,
-                    height: 480
-                });
-                camera.start();
-                debugInfo.textContent = "Camera started - waiting for landmarks...";
-            } catch (err) {
-                debugInfo.textContent = "Camera error: " + err.message;
-                console.error("Camera start error", err);
-            }
-
-            let lastDetectedCommand = "none";
-
-            function onPoseResults(results) {
-                if (results.image) {
-                    debugCtx.save();
-                    debugCtx.clearRect(0, 0, debugCanvas.width, debugCanvas.height);
-                    debugCtx.drawImage(results.image, 0, 0, debugCanvas.width, debugCanvas.height);
-                }
-
-                if (!results.poseLandmarks || !results.poseLandmarks.length) {
-                    debugInfo.textContent = "No landmarks detected";
-                    debugCtx.restore();
-                    return;
-                }
-
-                const lm = results.poseLandmarks;
-
-                function drawPoint(idx, color) {
-                    const p = lm[idx];
-                    const sx = p.x * debugCanvas.width;
-                    const sy = p.y * debugCanvas.height;
-                    debugCtx.beginPath();
-                    debugCtx.arc(sx, sy, 8, 0, Math.PI*2);
-                    debugCtx.fillStyle = color;
-                    debugCtx.fill();
-                }
-
-                drawPoint(L_SH, "white");
-                drawPoint(R_SH, "white");
-                drawPoint(L_EL, "yellow");
-                drawPoint(R_EL, "yellow");
-                drawPoint(L_WR, "red");
-                drawPoint(R_WR, "red");
-
-                const leftWristY = lm[L_WR].y;
-                const rightWristY = lm[R_WR].y;
-                const leftShoulderY = lm[L_SH].y;
-                const rightShoulderY = lm[R_SH].y;
-
-                const avgShoulderY = (leftShoulderY + rightShoulderY) / 2;
-                const avgWristY = (leftWristY + rightWristY) / 2;
-
-                const bothUp = (leftWristY + THRESHOLD_OFFSET < leftShoulderY - THRESHOLD) &&
-                                (rightWristY + THRESHOLD_OFFSET < rightShoulderY - THRESHOLD);
-
-                const bothDown = (leftWristY - THRESHOLD_OFFSET > leftShoulderY + THRESHOLD) &&
-                                (rightWristY - THRESHOLD_OFFSET > rightShoulderY + THRESHOLD);
-
-                let observedState = "neutral";
-                if (bothUp) observedState = "up";
-                else if (bothDown) observedState = "down";
-                console.log("observed state", observedState);
-
-                if (observedState === lastArmState) {
-                    consecutiveFrames = 0; 
-                } else {
-                    if (observedState === "neutral") {
-                        consecutiveFrames = 0;
-                    } else {
-                        consecutiveFrames++;
-                    }
-                }
-
-
-                if (consecutiveFrames >= HOLD_FRAMES && observedState !== lastArmState) {
-                    const now = performance.now();
-                    console.log("first if");
-
-                    lastDetectedCommand = observedState.toUpperCase();
-
-                    console.log("DEBUG: cooldownElapsed=", now - lastTriggerTime, "COOLDOWN_MS=", COOLDOWN_MS);
-                    console.log("DEBUG: gameState=", gameState, "visionEnabled=", window.visionEnabled);
-
-                    if (now - lastTriggerTime > COOLDOWN_MS && (gameState === 'playing') && window.visionEnabled) {
-                        console.log("second if - firing control");
-                        controls.up = true;
-                        lastTriggerTime = now;
-                    }
-                    lastArmState = observedState;
-                    consecutiveFrames = 0;
-                }
-                console.log("lastDetected", lastDetectedCommand);
-
-                debugInfo.textContent =
-                    `LeftWrY: ${leftWristY.toFixed(3)}  LShY: ${leftShoulderY.toFixed(3)}\n` +
-                    `RightWrY:${rightWristY.toFixed(3)}  RShY: ${rightShoulderY.toFixed(3)}\n` +
-                    `AvgWr:  ${avgWristY.toFixed(3)}  AvgSh: ${avgShoulderY.toFixed(3)}\n` +
-                    `Observed: ${observedState}  LastState: ${lastArmState}\n` +
-                    `LastCmd: ${lastDetectedCommand}\n` +
-                    `(visionEnabled: ${window.visionEnabled})`;
-
-                debugCtx.fillStyle = "rgba(0,0,0,0.5)";
-                debugCtx.fillRect(8, debugCanvas.height - 72, debugCanvas.width - 16, 64);
-                debugCtx.fillStyle = "white";
-                debugCtx.font = "20px monospace";
-                debugCtx.fillText(`Command: ${lastDetectedCommand}`, 16, debugCanvas.height - 40);
-
-                debugCtx.restore();
-            }
-        })();
-  
-        function init() {
-            setupKeyboardControls();
-
-            bird = {
-                x: canvas.width / 4,
-                y: canvas.height / 2,
-                width: BIRD_WIDTH,
-                height: BIRD_HEIGHT,
-                velocityY: 0,
-                velocityX: 0
-            };
-
-            showMenu();
-            assets.bird.onload = onAssetLoad;
-            assets.pipeBottom.onload = onAssetLoad;
-            assets.bird.src = "{% static 'bird.png' %}";
-            assets.pipeBottom.src = "{% static 'pipe.png' %}";
-
-            gameLoop();
-        }
-
-        init();
-
-    </script>
-    </body>
+    })();
+
+    // ----- Initialization -----
+    function init(){
+        setupKeyboardControls();
+
+        assets.bird.onload=onAssetLoad;
+        assets.pipeBottom.onload=onAssetLoad;
+        assets.bird.src="{% static 'bird.png' %}";
+        assets.pipeBottom.src="{% static 'pipe.png' %}";
+
+        startGameBtn.addEventListener('click', startGame);
+        gameLoop();
+    }
+
+    init();
+</script>
+</body>
 </html>
