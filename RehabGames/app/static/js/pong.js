@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const hardBtn = document.getElementById('hardBtn');
     mediumBtn.classList.add('active-difficulty');
 
+    const WIN_SCORE = 10;
+
     // --- Difficulty Settings ---
     const difficultySettings = {
         EASY: {
@@ -26,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSettings = difficultySettings.MEDIUM;
 
     // --- Game State ---
-    let gameState = 'START'; // 'START', 'PLAYING', 'PAUSED'
+    // 'START', 'PLAYING', 'PAUSED', 'GAME_OVER'
+    let gameState = 'START';
     let visionControl = true; // Control with vision by default
 
     // --- Player Input Abstraction ---
@@ -46,50 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
             playerInput = 'STOP';
         }
     });
-
-    // --- Button Control Logic ---
-    gameButton.addEventListener('click', () => {
-        if (gameState === 'START') {
-            gameState = 'PLAYING';
-            gameButton.textContent = 'Pause';
-        } else if (gameState === 'PLAYING') {
-            gameState = 'PAUSED';
-            gameButton.textContent = 'Resume';
-        } else if (gameState === 'PAUSED') {
-            gameState = 'PLAYING';
-            gameButton.textContent = 'Pause';
-        }
-    });
-
-    // --- Difficulty Button Listeners ---
-    easyBtn.addEventListener('click', () => setDifficulty('EASY'));
-    mediumBtn.addEventListener('click', () => setDifficulty('MEDIUM'));
-    hardBtn.addEventListener('click', () => setDifficulty('HARD'));
-
-    function setDifficulty(difficulty) {
-        // --- ADD THIS BLOCK ---
-        // 1. Remove active class from all buttons
-        easyBtn.classList.remove('active-difficulty');
-        mediumBtn.classList.remove('active-difficulty');
-        hardBtn.classList.remove('active-difficulty');
-
-        // 2. Add active class to the selected button
-        if (difficulty === 'EASY') {
-            easyBtn.classList.add('active-difficulty');
-        } else if (difficulty === 'MEDIUM') {
-            mediumBtn.classList.add('active-difficulty');
-        } else if (difficulty === 'HARD') {
-            hardBtn.classList.add('active-difficulty');
-        }
-        // --- END OF NEW BLOCK ---
-
-        currentSettings = difficultySettings[difficulty];
-        playerPaddle.score = 0;
-        aiPaddle.score = 0;
-        resetBall();
-        gameState = 'START';
-        gameButton.textContent = 'Start';
-    }
 
     // --- Game Objects ---
     const paddleWidth = 10;
@@ -125,14 +84,77 @@ document.addEventListener('DOMContentLoaded', () => {
         color: 'white'
     };
 
+    // --- Button Control Logic ---
+    gameButton.addEventListener('click', () => {
+        if (gameState === 'START') {
+            gameState = 'PLAYING';
+            gameButton.textContent = 'Pause';
+        } else if (gameState === 'PLAYING') {
+            gameState = 'PAUSED';
+            gameButton.textContent = 'Resume';
+        } else if (gameState === 'PAUSED') {
+            gameState = 'PLAYING';
+            gameButton.textContent = 'Pause';
+        } else if (gameState === 'GAME_OVER') {
+            // Restart match after someone reached WIN_SCORE
+            playerPaddle.score = 0;
+            aiPaddle.score = 0;
+            resetBall(true); // fresh serve
+            gameState = 'START';
+            gameButton.textContent = 'Start';
+        }
+    });
+
+    // --- Difficulty Button Listeners ---
+    easyBtn.addEventListener('click', () => setDifficulty('EASY'));
+    mediumBtn.addEventListener('click', () => setDifficulty('MEDIUM'));
+    hardBtn.addEventListener('click', () => setDifficulty('HARD'));
+
+    function setDifficulty(difficulty) {
+        // 1. Remove active class from all buttons
+        easyBtn.classList.remove('active-difficulty');
+        mediumBtn.classList.remove('active-difficulty');
+        hardBtn.classList.remove('active-difficulty');
+
+        // 2. Add active class to the selected button
+        if (difficulty === 'EASY') {
+            easyBtn.classList.add('active-difficulty');
+        } else if (difficulty === 'MEDIUM') {
+            mediumBtn.classList.add('active-difficulty');
+        } else if (difficulty === 'HARD') {
+            hardBtn.classList.add('active-difficulty');
+        }
+
+        currentSettings = difficultySettings[difficulty];
+        playerPaddle.score = 0;
+        aiPaddle.score = 0;
+        resetBall(true);
+        gameState = 'START';
+        gameButton.textContent = 'Start';
+    }
+
     // --- Helper function to reset the ball ---
-    function resetBall() {
+    function resetBall(randomizeDirection = false) {
         ball.x = canvas.width / 2;
         ball.y = canvas.height / 2;
         ball.speed = currentSettings.ballSpeed;
-        // Serve to the player who just scored
-        ball.velocityX = -ball.velocityX;
-        ball.velocityY = currentSettings.ballSpeed; // Reset vertical velocity
+
+        if (randomizeDirection || !ball.velocityX) {
+            const dir = Math.random() < 0.5 ? -1 : 1;
+            ball.velocityX = dir * currentSettings.ballSpeed;
+        } else {
+            // Serve to the player who just scored
+            ball.velocityX = -ball.velocityX;
+        }
+
+        ball.velocityY = currentSettings.ballSpeed * (Math.random() < 0.5 ? 1 : -1);
+    }
+
+    function checkWin() {
+        if (playerPaddle.score >= WIN_SCORE || aiPaddle.score >= WIN_SCORE) {
+            gameState = 'GAME_OVER';
+            gameButton.textContent = 'Restart';
+        }
     }
 
     // --- Update Function (Game Logic) ---
@@ -148,17 +170,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // --- Beatable AI Logic ---
-        // The AI paddle tries to follow the ball's y position, but with a slight delay.
         const targetY = ball.y - aiPaddle.height / 2;
         aiPaddle.y += (targetY - aiPaddle.y) * currentSettings.aiReaction;
 
-        // Clamp the AI paddle's position to stay within the canvas
+        // Clamp AI
         if (aiPaddle.y < 0) {
             aiPaddle.y = 0;
         } else if (aiPaddle.y > canvas.height - aiPaddle.height) {
             aiPaddle.y = canvas.height - aiPaddle.height;
         }
-
 
         // Move the ball
         ball.x += ball.velocityX;
@@ -172,19 +192,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ball collision with paddles
         let player = (ball.x < canvas.width / 2) ? playerPaddle : aiPaddle;
         if (collision(ball, player)) {
-            // Calculate where the ball hit the paddle
             let collidePoint = (ball.y - (player.y + player.height / 2));
-            // Normalize the value
             collidePoint = collidePoint / (player.height / 2);
-            // Calculate the angle in Radian
             let angleRad = (Math.PI / 4) * collidePoint;
 
-            // Change the X and Y velocity direction
             let direction = (ball.x < canvas.width / 2) ? 1 : -1;
             ball.velocityX = direction * ball.speed * Math.cos(angleRad);
             ball.velocityY = ball.speed * Math.sin(angleRad);
 
-            // Increase ball speed after each hit
             ball.speed += 0.2;
         }
 
@@ -192,11 +207,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ball.x - ball.radius < 0) {
             // AI scores
             aiPaddle.score++;
-            resetBall();
+            checkWin();
+            if (gameState !== 'GAME_OVER') {
+                resetBall();
+            }
         } else if (ball.x + ball.radius > canvas.width) {
             // Player scores
             playerPaddle.score++;
-            resetBall();
+            checkWin();
+            if (gameState !== 'GAME_OVER') {
+                resetBall();
+            }
         }
     }
 
@@ -216,11 +237,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Draw Function ---
     function draw() {
-        // Clear the canvas with a black rectangle
+        // Clear the canvas
         ctx.fillStyle = 'black';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw the center line
+        // Center line
         ctx.strokeStyle = 'white';
         ctx.lineWidth = 2;
         ctx.setLineDash([10, 10]);
@@ -228,60 +249,70 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.moveTo(canvas.width / 2, 0);
         ctx.lineTo(canvas.width / 2, canvas.height);
         ctx.stroke();
-        ctx.setLineDash([]); // Reset line dash
+        ctx.setLineDash([]);
 
-        // Draw the scores
+        // Scores
         ctx.fillStyle = 'white';
         ctx.font = '45px "Press Start 2P"';
+        ctx.textAlign = 'center';
         ctx.fillText(playerPaddle.score, canvas.width / 4, 50);
         ctx.fillText(aiPaddle.score, 3 * canvas.width / 4, 50);
 
-        // Draw the paddles
+        // Paddles
         ctx.fillStyle = playerPaddle.color;
         ctx.fillRect(playerPaddle.x, playerPaddle.y, playerPaddle.width, playerPaddle.height);
         ctx.fillStyle = aiPaddle.color;
         ctx.fillRect(aiPaddle.x, aiPaddle.y, aiPaddle.width, aiPaddle.height);
 
-        // Draw the ball
+        // Ball
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2, false);
         ctx.fillStyle = ball.color;
         ctx.fill();
 
-        // --- Draw Game State Messages ---
+        // State messages
         ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.font = '50px "Press Start 2P"';
         ctx.textAlign = 'center';
 
         if (gameState === 'START') {
+            ctx.font = '40px "Press Start 2P"';
             ctx.fillText('Press Start', canvas.width / 2, canvas.height / 2);
         } else if (gameState === 'PAUSED') {
+            ctx.font = '40px "Press Start 2P"';
             ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2);
+        } else if (gameState === 'GAME_OVER') {
+            ctx.font = '40px "Press Start 2P"';
+            const msg = playerPaddle.score >= WIN_SCORE ? 'YOU WIN!' : 'YOU LOSE';
+            ctx.fillText(msg, canvas.width / 2, canvas.height / 2 - 40);
+            ctx.font = '20px "Press Start 2P"';
+            ctx.fillText('Click Restart', canvas.width / 2, canvas.height / 2 + 20);
         }
-        ctx.textAlign = 'left'; // Reset alignment
+
+        ctx.textAlign = 'left'; // Reset if you need it later
     }
 
     // --- Game Loop ---
     function gameLoop() {
         // Update paddle position based on vision regardless of game state
-        if (visionControl && window.handY !== null) {
+        if (visionControl && window.handY !== null && window.handY !== undefined) {
             const targetY = window.handY * canvas.height;
-            // Adjust for paddle center
-            const smoothedY = playerPaddle.y + (targetY - (playerPaddle.y + playerPaddle.height / 2)) * 0.5; 
-            
-            // Clamp to canvas boundaries
-            playerPaddle.y = Math.max(0, Math.min(canvas.height - playerPaddle.height, smoothedY));
+            const smoothedY = playerPaddle.y +
+                (targetY - (playerPaddle.y + playerPaddle.height / 2)) * 0.5;
+
+            playerPaddle.y = Math.max(
+                0,
+                Math.min(canvas.height - playerPaddle.height, smoothedY)
+            );
         }
 
-        // Only update game logic if the game is in 'PLAYING' state
         if (gameState === 'PLAYING') {
             update();
         }
+
         draw();
         requestAnimationFrame(gameLoop);
     }
 
     // --- Start the Game Loop ---
-    // The loop now runs continuously, but the update() function is conditional.
     gameLoop();
 });
