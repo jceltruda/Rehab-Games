@@ -148,7 +148,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Links
 
-- **Project Link**: [https://github.com/YOUR_USERNAME/Rehab-Games-2](https://github.com/YOUR_USERNAME/Rehab-Games-2)
+- **Project Link**: [https://github.com/YOUR_USERNAME/Rehab-Games-2](https://github.com/jceltruda/Rehab-Games)
 - **Live Demo**: [https://rehab-games.onrender.com/](https://rehab-games.onrender.com/)
 - **DevPost**: [https://devpost.com/software/rehab-games](https://devpost.com/software/rehab-games)
 - **Video Demo**: [https://www.youtube.com/watch?v=bg_oOPQS_mg](https://youtu.be/QHAb9Sb3wYU)
