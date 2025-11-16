@@ -292,6 +292,12 @@ function handleGameOver(didWin) {
 
 // ---- Input handling ----
 window.addEventListener("keydown", (e) => {
+
+     if (e.code === "Space" && document.activeElement === gameButton) {
+        e.preventDefault();   // stop the default "press button" behavior
+        gameButton.blur();    // optional: also clear focus
+    }
+    
     const key = e.key;
 
     if (gameState === STATE.PLAYING) {
@@ -472,7 +478,6 @@ function setupButtons() {
     gameButton.addEventListener('click', () => {
         if (gameState === STATE.START) {
             startNewGame();
-            gameButton.textContent = 'Pause';
         } else if (gameState === STATE.PLAYING) {
             gameState = STATE.PAUSED;
             gameButton.textContent = 'Resume';
@@ -550,7 +555,7 @@ function startArkanoid() {
         return;
     }
     ctx = canvas.getContext("2d");
-
+    
     // Initialize game objects
     paddle = new Paddle(difficultyMult);
     ball = new Ball(difficultyMult);

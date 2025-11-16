@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body>
+    <div id="cursor-glow"></div>
     <div class="home-container">
         <h1>Rehab Games</h1>
         <h2>Physical therapy meets classic arcade.</h2>
@@ -17,5 +18,44 @@
             Leaderboard
         </a>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const glow = document.getElementById('cursor-glow');
+            if (!glow) return;
+
+            window.addEventListener('pointermove', (e) => {
+            glow.style.opacity = '1';
+            glow.style.left = e.clientX + 'px';
+            glow.style.top  = e.clientY + 'px';
+            });
+
+            window.addEventListener('pointerdown', () => {
+            glow.classList.add('clicking');
+            });
+
+            window.addEventListener('pointerup', () => {
+            glow.classList.remove('clicking');
+            });
+
+            window.addEventListener('pointerleave', () => {
+            glow.style.opacity = '0';
+            });
+        });
+        </script>
+
+    <script>
+        document.addEventListener("click", (e) => {
+            if (e.target.closest("button, a, input, .cta-button")) return;
+
+            const body = document.body;
+            body.classList.add("jelly-effect");
+
+            setTimeout(() => {
+                body.classList.remove("jelly-effect");
+            }, 450); // match animation duration
+        });
+        </script>
+
 </body>
 </html>

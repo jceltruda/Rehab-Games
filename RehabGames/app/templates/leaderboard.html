@@ -40,6 +40,7 @@
     </style>
 </head>
 <body>
+    <div id="cursor-glow"></div>
     <div class="leaderboard-container">
         <h1>Leaderboard</h1>
 
@@ -80,5 +81,31 @@
 
         <a href="{% url 'home' %}" class="back-link">← Back to Home</a>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const glow = document.getElementById('cursor-glow');
+            if (!glow) return;
+
+            window.addEventListener('pointermove', (e) => {
+            glow.style.opacity = '1';
+            glow.style.left = e.clientX + 'px';
+            glow.style.top  = e.clientY + 'px';
+            });
+
+            window.addEventListener('pointerdown', () => {
+            glow.classList.add('clicking');
+            });
+
+            window.addEventListener('pointerup', () => {
+            glow.classList.remove('clicking');
+            });
+
+            window.addEventListener('pointerleave', () => {
+            glow.style.opacity = '0';
+            });
+        });
+        </script>
+
 </body>
 </html>

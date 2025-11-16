@@ -215,3 +215,58 @@ a {
         gap: 1.5rem;
     }
 }
+
+#cursor-glow {
+    position: fixed;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+
+    background: radial-gradient(circle at 30% 30%,
+        rgba(0, 255, 255, 0.9),
+        rgba(0, 128, 255, 0.6),
+        rgba(0, 0, 0, 0)
+    );
+    box-shadow:
+        0 0 15px rgba(0, 255, 255, 0.7),
+        0 0 35px rgba(0, 128, 255, 0.8);
+
+    /* Center this element around its (left, top) */
+    transform: translate(-50%, -50%);
+    transition:
+        left 0.06s linear,
+        top 0.06s linear,
+        opacity 0.3s ease-out;
+    opacity: 0;
+}
+
+#cursor-glow.clicking {
+    box-shadow:
+        0 0 20px rgba(0, 255, 255, 0.9),
+        0 0 45px rgba(0, 128, 255, 1);
+}
+
+/* Hide the real cursor everywhere */
+html, body, button, a, input {
+    cursor: none !important;
+}
+
+/* Jelly / slime wobble */
+@keyframes jelly-wiggle {
+    0%   { transform: scale(1,1)   rotate(0deg); }
+    15%  { transform: scale(1.03,0.97) rotate(0.6deg); }
+    30%  { transform: scale(0.97,1.03) rotate(-0.6deg); }
+    45%  { transform: scale(1.02,0.98) rotate(0.4deg); }
+    60%  { transform: scale(0.98,1.02) rotate(-0.4deg); }
+    75%  { transform: scale(1.01,0.99) rotate(0.2deg); }
+    100% { transform: scale(1,1) rotate(0deg); }
+}
+
+.jelly-effect {
+    animation: jelly-wiggle 0.45s cubic-bezier(.22, 1.28, .36, 1);
+    will-change: transform;
+}
+
+

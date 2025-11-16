@@ -126,6 +126,7 @@
     </style>
 </head>
 <body>
+    <div id="cursor-glow"></div>
     <div class="home-container">
         <div class="info-column">
             <h1>Arkanoid</h1>
@@ -242,5 +243,30 @@
             startBtn.textContent = "Game Running...";
         });
     </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const glow = document.getElementById('cursor-glow');
+            if (!glow) return;
+
+            window.addEventListener('pointermove', (e) => {
+            glow.style.opacity = '1';
+            glow.style.left = e.clientX + 'px';
+            glow.style.top  = e.clientY + 'px';
+            });
+
+            window.addEventListener('pointerdown', () => {
+            glow.classList.add('clicking');
+            });
+
+            window.addEventListener('pointerup', () => {
+            glow.classList.remove('clicking');
+            });
+
+            window.addEventListener('pointerleave', () => {
+            glow.style.opacity = '0';
+            });
+        });
+        </script>
 </body>
 </html>

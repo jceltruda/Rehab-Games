@@ -9,6 +9,7 @@
 </head>
 
 <body>
+    <div id="cursor-glow"></div>
     <h1>Choose Your Game</h1>
     <div class="game-grid">
         <a href="{% url 'game_pong' %}" class="game-card">
@@ -25,5 +26,31 @@
         </a>
     </div>
     <a href="/" class="cta-button" style="margin-top: 3rem;">Back to Home</a>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const glow = document.getElementById('cursor-glow');
+            if (!glow) return;
+
+            window.addEventListener('pointermove', (e) => {
+            glow.style.opacity = '1';
+            glow.style.left = e.clientX + 'px';
+            glow.style.top  = e.clientY + 'px';
+            });
+
+            window.addEventListener('pointerdown', () => {
+            glow.classList.add('clicking');
+            });
+
+            window.addEventListener('pointerup', () => {
+            glow.classList.remove('clicking');
+            });
+
+            window.addEventListener('pointerleave', () => {
+            glow.style.opacity = '0';
+            });
+        });
+        </script>
+        
 </body>
 </html>
