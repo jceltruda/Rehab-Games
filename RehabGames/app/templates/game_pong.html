@@ -91,6 +91,7 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
+            transform: scaleX(-1);
         }
     </style>
 </head>
@@ -162,16 +163,44 @@
         const startBtn = document.getElementById('startGameBtn');
         const container = document.getElementById('pongContainer');
         const webcamContainer = document.getElementById('webcamContainer');
+        const toggleCheckbox = document.getElementById('toggleWebcam');
 
-        startBtn.addEventListener('click', async () => {
+        // --- FIX 1: Add the toggle logic back in ---
+        function setWebcamVisibility() {
+            if (toggleCheckbox.checked) {
+                webcamContainer.style.display = 'flex';
+            } else {
+                webcamContainer.style.display = 'none';
+            }
+        }
+        toggleCheckbox.addEventListener('change', setWebcamVisibility);
+
+        // --- FIX 2: Start the camera on page load, NOT after clicking start ---
+        async function initializeCamera() {
+            // Start webcam + hand tracking immediately
+            if (window.initHandControl) {
+                try {
+                    await window.initHandControl();
+                } catch (err) {
+                    console.error("Error initializing hand control:", err);
+                    // Handle error (e.g., show a message)
+                }
+            }
+            // Now that the camera is (or isn't) running, set the initial visibility
+            setWebcamVisibility();
+        }
+
+        // Run the camera setup when the page finishes loading
+        window.addEventListener('load', initializeCamera);
+
+        // --- FIX 3: Simplify the start button ---
+        // It only needs to show the game canvas and disable itself
+        startBtn.addEventListener('click', () => {
             // Show game canvas and controls
             container.style.display = 'block';
-            webcamContainer.style.display = 'flex';
 
-            // Start webcam + hand tracking
-            if (window.initHandControl) {
-                await window.initHandControl();
-            }
+            // The camera and toggle are already working.
+            // If your pong.js file has a 'start' function, call it here.
 
             startBtn.disabled = true;
             startBtn.textContent = "Game Running...";
