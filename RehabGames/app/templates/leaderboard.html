@@ -37,6 +37,25 @@
         td {
             color: #eee;
         }
+        .username-form {
+            margin: 20px 0;
+        }
+        .username-form input {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #555;
+            background: #222;
+            color: #eee;
+            margin-right: 8px;
+        }
+        .username-form button {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #0ff;
+            background: transparent;
+            color: #0ff;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -44,6 +63,14 @@
     <div class="leaderboard-container">
         <h1>Leaderboard</h1>
 
+        <!-- NEW: username picker -->
+        <div class="username-form">
+            <label for="usernameInput">Set username for Guest scores:</label><br>
+            <br>
+            <input type="text" id="usernameInput" placeholder="Enter a name">
+            <button type="button" onclick="setUsername()">Apply</button>
+        </div>
+        
         <!-- Game selector -->
         <form method="get" class="game-select-form">
             <label for="game">Choose a game:</label>
@@ -85,29 +112,71 @@
     </div>
 
     <script>
+        // glow cursor you already had
         document.addEventListener("DOMContentLoaded", () => {
             const glow = document.getElementById('cursor-glow');
             if (!glow) return;
 
             window.addEventListener('pointermove', (e) => {
-            glow.style.opacity = '1';
-            glow.style.left = e.clientX + 'px';
-            glow.style.top  = e.clientY + 'px';
+                glow.style.opacity = '1';
+                glow.style.left = e.clientX + 'px';
+                glow.style.top  = e.clientY + 'px';
             });
 
             window.addEventListener('pointerdown', () => {
-            glow.classList.add('clicking');
+                glow.classList.add('clicking');
             });
 
             window.addEventListener('pointerup', () => {
-            glow.classList.remove('clicking');
+                glow.classList.remove('clicking');
             });
 
             window.addEventListener('pointerleave', () => {
-            glow.style.opacity = '0';
+                glow.style.opacity = '0';
             });
         });
-        </script>
+
+        // NEW: call backend to rename Guests
+        async function setUsername() {
+            const input = document.getElementById('usernameInput');
+            const gameSelect = document.getElementById('game');
+            const username = input.value.trim();
+            const game = gameSelect.value;
+
+            if (!username) {
+                alert("Please enter a username first.");
+                return;
+            }
+
+            try {
+                const resp = await fetch("{% url 'set_username' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        game: game,  // only change Guests for this game
+                    }),
+                });
+
+                if (!resp.ok) {
+                    const txt = await resp.text();
+                    console.error("Error:", resp.status, txt);
+                    alert("Error updating username. Check console for details.");
+                    return;
+                }
+
+                const data = await resp.json();
+                console.log("Updated rows:", data.updated);
+                // reload to show updated names
+                window.location.reload();
+            } catch (err) {
+                console.error("Fetch error:", err);
+                alert("Network error while updating username.");
+            }
+        }
+    </script>
 
 </body>
 </html>

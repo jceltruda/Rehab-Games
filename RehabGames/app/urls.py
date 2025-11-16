@@ -11,4 +11,5 @@ urlpatterns = [
     path('game/road_fighter/', views.game_road_fighter_view, name='game_road_fighter'),
     path("leaderboard/", views.leaderboard, name="leaderboard"),
     path("submit_score/", views.submit_score, name="submit_score"),
+    path('set_username/', views.set_username, name='set_username'),
 ]

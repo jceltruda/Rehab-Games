@@ -75,3 +75,34 @@ def leaderboard(request):
     }
 
     return render(request, "leaderboard.html", context)
+
+@csrf_exempt
+def set_username(request):
+    """
+    Overwrite all 'Guest' player_name entries for a given game
+    with the provided username.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "POST only"}, status=405)
+
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    username = data.get("username", "").strip()
+    game = data.get("game", "").strip()
+
+    if not username:
+        return JsonResponse({"error": "Username required"}, status=400)
+
+    # base queryset: all Guest scores
+    qs = Score.objects.filter(player_name="Guest")
+
+    # optionally narrow to a game, e.g. 'arkanoid' or 'shoulder-bird'
+    if game:
+        qs = qs.filter(game=game)
+
+    updated_count = qs.update(player_name=username)
+
+    return JsonResponse({"ok": True, "updated": updated_count})
