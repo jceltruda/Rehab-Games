@@ -7,6 +7,15 @@
     <title>Rehab Games - Select Game</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
+<style>
+    .game-grid{
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 25px; 
+        max-width: 800px;
+        margin: 0 auto;
+    }
+</style>
 <body>
     <h1>Choose Your Game</h1>
     <div class="game-grid">
@@ -21,6 +30,10 @@
         <a href="{% url 'game_arkanoid' %}" class="game-card">
             <h3>Arkanoid</h3>
             <p>Horizontal Arm Movement</p>
+        </a>
+        <a href="{% url 'game_road_fighter' %}" class="game-card">
+            <h3>Road Fighter</h3>
+            <p>Rotating Hand Movement</p>
         </a>
     </div>
     <a href="/" class="cta-button" style="margin-top: 3rem;">Back to Home</a>
